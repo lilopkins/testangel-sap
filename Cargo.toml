@@ -1,6 +1,6 @@
 [package]
 name = "testangel-sap"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = [ "Lily Hopkins <lily@hpkns.uk>" ]
 description = "TestAngel engine for interaction with SAP systems."
@@ -11,4 +11,4 @@ description = "TestAngel engine for interaction with SAP systems."
 clap = { version = "4.3.21", features = ["derive"] }
 lazy_static = "1.4.0"
 sap-scripting = "0.3.0"
-testangel-ipc = { git = "ssh://git@github.com/lilopkins/testangel.git" }
+testangel-ipc = { git = "https://github.com/lilopkins/testangel.git" }
