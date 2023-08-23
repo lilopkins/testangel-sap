@@ -148,14 +148,13 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     }
 
                     if state.session.is_none() {
-                        let conn = connect(state);
-                        if let Err(e) = conn {
-                            return Response::Error {
+                        match connect(state) {
+                            Err(e) => return Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
                                 reason: e,
-                            };
+                            },
+                            Ok(conn) => state.session = Some(conn),
                         }
-                        state.session = Some(conn.unwrap());
                     }
 
                     evidence.push(vec![]);
@@ -192,10 +191,12 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     if let Some(session) = &state.session {
                         if let Ok(wnd) = session.find_by_id(target.clone()) {
-                            match wnd {
-                                SAPComponent::GuiTextField(txt) => txt.set_text(value).unwrap(),
-                                SAPComponent::GuiCTextField(txt) => txt.set_text(value).unwrap(),
-                                _ => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Can't set text on {target}!") },
+                            if let Err(reason) = match wnd {
+                                SAPComponent::GuiTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
+                                SAPComponent::GuiCTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
+                                _ => Err(format!("No valid target to set text.")),
+                            } {
+                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't find {target}.") };
@@ -214,9 +215,11 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     if let Some(session) = &state.session {
                         if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
-                            match wnd {
-                                SAPComponent::GuiMainWindow(wnd) => wnd.send_v_key(key).unwrap(),
-                                _ => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("SAP window not open") },
+                            if let Err(reason) = match wnd {
+                                SAPComponent::GuiMainWindow(wnd) => wnd.send_v_key(key).map_err(|e| format!("Couldn't send VKey: {e}")),
+                                _ => Err(String::from("SAP window not open")),
+                            } {
+                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("SAP window couldn't be requested.") };
@@ -235,9 +238,11 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     if let Some(session) = &state.session {
                         if let Ok(comp) = session.find_by_id(id) {
-                            match comp {
-                                SAPComponent::GuiButton(b) => b.press().unwrap(),
-                                _ => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("Tried to press a non-button") },
+                            if let Err(reason) = match comp {
+                                SAPComponent::GuiButton(b) => b.press().map_err(|e| format!("Couldn't press button: {e}")),
+                                _ => Err(String::from("Tried to press a non-button")),
+                            } {
+                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("Failed to find component") };
