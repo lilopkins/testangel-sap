@@ -15,6 +15,7 @@ struct Cli {
 
 #[derive(Default)]
 struct State {
+    com_instance: Option<SAPComInstance>,
     session: Option<GuiSession>,
 }
 
@@ -147,7 +148,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     }
 
                     if state.session.is_none() {
-                        let conn = connect();
+                        let conn = connect(state);
                         if let Err(e) = conn {
                             return Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
@@ -169,7 +170,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     if let Some(session) = &state.session {
                         if let Err(e) = session.start_transaction(tcode.clone()) {
-                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't execute transaction. {}", e.message()) }
+                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't execute transaction. {e}") }
                         }
                     }
 
@@ -261,7 +262,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
     }
 }
 
-fn connect() -> std::result::Result<GuiSession, String> {
+fn connect(state: &mut State) -> std::result::Result<GuiSession, String> {
     let com_instance = SAPComInstance::new().map_err(|_| "Couldn't get COM instance")?;
     let wrapper = com_instance
         .sap_wrapper()
@@ -288,5 +289,6 @@ fn connect() -> std::result::Result<GuiSession, String> {
         _ => return Err(String::from("Expected GuiSession, but got something else!")),
     };
 
+    state.com_instance = Some(com_instance);
     Ok(session)
 }
