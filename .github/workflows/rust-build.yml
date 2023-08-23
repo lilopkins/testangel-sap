@@ -28,6 +28,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: target/release/testangel-sap.exe
+          files: target/i686-pc-windows-msvc/release/testangel-sap.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
