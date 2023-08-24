@@ -1,22 +1,13 @@
-use std::{collections::HashMap, io};
+use std::{collections::HashMap, sync::Mutex, ffi::{c_char, CStr, CString}};
 
-use clap::{arg, command, Parser};
 use lazy_static::lazy_static;
 use sap_scripting::*;
 use testangel_ipc::prelude::*;
 
-#[derive(Parser)]
-#[command(author, about, version)]
-struct Cli {
-    /// Rather than running as a REPL loop, process a single request
-    #[arg(short, long)]
-    request: Option<String>,
-}
-
 #[derive(Default)]
 struct State {
     com_instance: Option<SAPComInstance>,
-    session: Option<GuiSession>,
+    //session: Option<GuiSession>,
 }
 
 lazy_static! {
@@ -50,68 +41,38 @@ lazy_static! {
         "Press a button in the UI.",
     )
     .with_parameter("target", "Target", ParameterKind::String);
+    static ref STATE: Mutex<State> = Mutex::new(State::default());
 }
 
-fn main() {
-    let cli = Cli::parse();
+#[no_mangle]
+pub unsafe extern "C" fn ta_call(input: *const c_char) -> *mut c_char {
+    let input = CStr::from_ptr(input);
+    let response = call_internal(String::from_utf8_lossy(input.to_bytes()).to_string());
+    let c_response = CString::new(response).expect("valid response");
+    c_response.into_raw()
+}
 
+#[no_mangle]
+pub unsafe extern "C" fn ta_release(input: *mut c_char) {
+    if !input.is_null() {
+        drop(CString::from_raw(input));
+    }
+}
+
+fn call_internal(request_str: String) -> String {
     // Parse the request
-    if let Some(request) = cli.request {
-        let request = Request::try_from(request);
-        if let Err(e) = request {
-            // Return a well-formatted error if the request couldn't be parsed.
-            println!(
-                "{}",
-                Response::Error {
-                    kind: ErrorKind::FailedToParseIPCJson,
-                    reason: format!("The IPC message was invalid. ({:?})", e)
-                }
-                .to_json()
-            );
-            return;
-        }
-        let request = request.unwrap();
-        let res = process_request(&mut State::default(), request);
-        println!("{}", res.to_json());
-    } else {
-        // Start REPL loop
-        repl_loop().expect("io failure");
+    let request = Request::try_from(request_str);
+    if let Err(e) = request {
+        // Return a well-formatted error if the request couldn't be parsed.
+        return Response::Error {
+                kind: ErrorKind::FailedToParseIPCJson,
+                reason: format!("The IPC message was invalid. ({:?})", e)
+            }
+            .to_json();
     }
-}
-
-fn repl_loop() -> io::Result<()> {
-    let mut state = State::default();
-    loop {
-        let mut buf = String::new();
-        io::stdin().read_line(&mut buf)?;
-        let buf = buf.trim();
-
-        if buf == "\x04" {
-            // EOF
-            return Ok(());
-        }
-
-        if buf.is_empty() {
-            continue;
-        }
-
-        let request = Request::try_from(buf.to_owned());
-        if let Err(e) = request {
-            // Return a well-formatted error if the request couldn't be parsed.
-            println!(
-                "{}",
-                Response::Error {
-                    kind: ErrorKind::FailedToParseIPCJson,
-                    reason: format!("The IPC message was invalid. ({:?})", e)
-                }
-                .to_json()
-            );
-            continue;
-        }
-        let request = request.unwrap();
-        let res = process_request(&mut state, request);
-        println!("{}", res.to_json());
-    }
+    let request = request.unwrap();
+    let res = process_request(STATE.lock().as_deref_mut().unwrap(), request);
+    res.to_json()
 }
 
 fn process_request(state: &mut State, request: Request) -> Response {
@@ -147,13 +108,13 @@ fn process_request(state: &mut State, request: Request) -> Response {
                         return Response::Error { kind, reason };
                     }
 
-                    if state.session.is_none() {
+                    if state.com_instance.is_none() {
                         match connect(state) {
                             Err(e) => return Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
                                 reason: e,
                             },
-                            Ok(conn) => state.session = Some(conn),
+                            Ok(_) => (),
                         }
                     }
 
@@ -167,10 +128,11 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     let tcode = i.parameters["tcode"].value_string();
 
-                    if let Some(session) = &state.session {
-                        if let Err(e) = session.start_transaction(tcode.clone()) {
+                    match get_session(state) {
+                        Ok(session) => if let Err(e) = session.start_transaction(tcode.clone()) {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't execute transaction. {e}") }
-                        }
+                        },
+                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
                     }
 
                     evidence.push(vec![
@@ -189,8 +151,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     let target = i.parameters["target"].value_string();
                     let value = i.parameters["value"].value_string();
 
-                    if let Some(session) = &state.session {
-                        if let Ok(wnd) = session.find_by_id(target.clone()) {
+                    match get_session(state) {
+                        Ok(session) => if let Ok(wnd) = session.find_by_id(target.clone()) {
                             if let Err(reason) = match wnd {
                                 SAPComponent::GuiTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
                                 SAPComponent::GuiCTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
@@ -200,7 +162,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't find {target}.") };
-                        }
+                        },
+                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
                     }
 
                     evidence.push(vec![]);
@@ -213,8 +176,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     let key = i.parameters["key"].value_i32();
 
-                    if let Some(session) = &state.session {
-                        if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
+                    match get_session(state) {
+                        Ok(session) => if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
                             if let Err(reason) = match wnd {
                                 SAPComponent::GuiMainWindow(wnd) => wnd.send_v_key(key).map_err(|e| format!("Couldn't send VKey: {e}")),
                                 _ => Err(String::from("SAP window not open")),
@@ -223,7 +186,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("SAP window couldn't be requested.") };
-                        }
+                        },
+                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
                     }
 
                     evidence.push(vec![]);
@@ -236,8 +200,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     let id = i.parameters["target"].value_string();
 
-                    if let Some(session) = &state.session {
-                        if let Ok(comp) = session.find_by_id(id) {
+                    match get_session(state) {
+                        Ok(session) => if let Ok(comp) = session.find_by_id(id) {
                             if let Err(reason) = match comp {
                                 SAPComponent::GuiButton(b) => b.press().map_err(|e| format!("Couldn't press button: {e}")),
                                 _ => Err(String::from("Tried to press a non-button")),
@@ -246,7 +210,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
                             }
                         } else {
                             return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("Failed to find component") };
-                        }
+                        },
+                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
                     }
 
                     evidence.push(vec![]);
@@ -269,7 +234,15 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
 fn connect(state: &mut State) -> std::result::Result<GuiSession, String> {
     let com_instance = SAPComInstance::new().map_err(|_| "Couldn't get COM instance")?;
-    let wrapper = com_instance
+    state.com_instance = Some(com_instance);
+    get_session(state)
+}
+
+/// Get the SAP session.
+fn get_session(state: &mut State) -> std::result::Result<GuiSession, String> {
+    let wrapper = state.com_instance
+        .as_ref()
+        .ok_or("SAP Wrapper not initialised")?
         .sap_wrapper()
         .map_err(|e| format!("Couldn't get SAP wrapper: {e}"))?;
     let engine = wrapper
@@ -284,7 +257,6 @@ fn connect(state: &mut State) -> std::result::Result<GuiSession, String> {
         SAPComponent::GuiConnection(conn) => conn,
         _ => return Err(String::from("Expected GuiConnection, but got something else!")),
     };
-    eprintln!("Got connection");
     let session = match sap_scripting::GuiConnection_Impl::children(&connection)
         .map_err(|e| format!("Couldn't get GuiConnection children: {e}"))?
         .element_at(0)
@@ -294,6 +266,5 @@ fn connect(state: &mut State) -> std::result::Result<GuiSession, String> {
         _ => return Err(String::from("Expected GuiSession, but got something else!")),
     };
 
-    state.com_instance = Some(com_instance);
     Ok(session)
 }
