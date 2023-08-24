@@ -234,7 +234,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                         return Response::Error { kind, reason };
                     }
 
-                    let id = i.parameters["id"].value_string();
+                    let id = i.parameters["target"].value_string();
 
                     if let Some(session) = &state.session {
                         if let Ok(comp) = session.find_by_id(id) {
