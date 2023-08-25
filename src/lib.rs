@@ -35,6 +35,20 @@ lazy_static! {
     )
     .with_parameter("target", "Target", ParameterKind::String)
     .with_parameter("value", "Value", ParameterKind::String);
+    static ref INSTRUCTION_GET_TEXT_VALUE: Instruction = Instruction::new(
+        "sap-get-text-value",
+        "Get Text Value",
+        "Get the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
+    )
+    .with_parameter("target", "Target", ParameterKind::String)
+    .with_output("value", "Value", ParameterKind::String);
+    static ref INSTRUCTION_SET_COMBOBOX_KEY: Instruction = Instruction::new(
+        "sap-set-combobox-key",
+        "Set Combo box Key",
+        "Set the key (selected item) of the combo box.",
+    )
+    .with_parameter("target", "Target", ParameterKind::String)
+    .with_parameter("key", "Key", ParameterKind::String);
     static ref INSTRUCTION_SEND_KEY: Instruction = Instruction::new(
         "sap-send-key",
         "Send Key",
@@ -110,6 +124,8 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     INSTRUCTION_CONNECT_TO_OPEN_INSTANCE.clone(),
                     INSTRUCTION_RUN_TRANSACTION.clone(),
                     INSTRUCTION_SET_TEXT_VALUE.clone(),
+                    INSTRUCTION_GET_TEXT_VALUE.clone(),
+                    INSTRUCTION_SET_COMBOBOX_KEY.clone(),
                     INSTRUCTION_SEND_KEY.clone(),
                     INSTRUCTION_PRESS_BUTTON.clone(),
                     INSTRUCTION_SET_CHECKBOX.clone(),
@@ -191,6 +207,96 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                         .set_text(value)
                                         .map_err(|e| format!("Can't set text: {e}")),
                                     _ => Err("No valid target to set text.".to_string()),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: format!("Couldn't find {target}."),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(HashMap::new());
+                } else if i.instruction == *INSTRUCTION_GET_TEXT_VALUE.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_GET_TEXT_VALUE.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let target = i.parameters["target"].value_string();
+                    let mut o = HashMap::new();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(wnd) = session.find_by_id(target.clone()) {
+                                match match wnd {
+                                    SAPComponent::GuiTextField(txt) => txt
+                                        .text()
+                                        .map_err(|e| format!("Can't get text: {e}")),
+                                    SAPComponent::GuiCTextField(txt) => txt
+                                        .text()
+                                        .map_err(|e| format!("Can't get text: {e}")),
+                                    SAPComponent::GuiFrameWindow(txt) => txt
+                                        .text()
+                                        .map_err(|e| format!("Can't get text: {e}")),
+                                    SAPComponent::GuiMainWindow(txt) => txt
+                                        .text()
+                                        .map_err(|e| format!("Can't get text: {e}")),
+                                    _ => Err("No valid target to get text.".to_string()),
+                                } {
+                                    Ok(text) => { o.insert("text".to_string(), ParameterValue::String(text)); }
+                                    Err(reason) => return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    },
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: format!("Couldn't find {target}."),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(HashMap::new());
+                } else if i.instruction == *INSTRUCTION_SET_COMBOBOX_KEY.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_SET_COMBOBOX_KEY.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let target = i.parameters["target"].value_string();
+                    let key = i.parameters["key"].value_string();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(wnd) = session.find_by_id(target.clone()) {
+                                if let Err(reason) = match wnd {
+                                    SAPComponent::GuiComboBox(cmb) => cmb
+                                        .set_key(key)
+                                        .map_err(|e| format!("Can't set combo box key: {e}")),
+                                    _ => Err("No valid target to set combo box key.".to_string()),
                                 } {
                                     return Response::Error {
                                         kind: ErrorKind::EngineProcessingError,
