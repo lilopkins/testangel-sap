@@ -124,8 +124,8 @@ dependencies = [
 
 [[package]]
 name = "testangel-ipc"
-version = "0.5.2"
-source = "git+https://github.com/lilopkins/testangel.git#d3138c5e9b405da2a06d0884d104dbf198d274c8"
+version = "0.8.0"
+source = "git+https://github.com/lilopkins/testangel.git#472a60a4ac77b431e2a210a900454911819cf057"
 dependencies = [
  "serde",
  "serde_json",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "lazy_static",
  "sap-scripting",
