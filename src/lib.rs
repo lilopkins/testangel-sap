@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Mutex, ffi::{c_char, CStr, CString}};
+use std::{
+    collections::HashMap,
+    ffi::{c_char, CStr, CString},
+    sync::Mutex,
+};
 
 use lazy_static::lazy_static;
 use sap_scripting::*;
@@ -7,8 +11,10 @@ use testangel_ipc::prelude::*;
 #[derive(Default)]
 struct State {
     com_instance: Option<SAPComInstance>,
-    //session: Option<GuiSession>,
+    session: Option<GuiSession>,
 }
+
+unsafe impl Send for State {}
 
 lazy_static! {
     static ref INSTRUCTION_CONNECT_TO_OPEN_INSTANCE: Instruction = Instruction::new(
@@ -65,10 +71,10 @@ fn call_internal(request_str: String) -> String {
     if let Err(e) = request {
         // Return a well-formatted error if the request couldn't be parsed.
         return Response::Error {
-                kind: ErrorKind::FailedToParseIPCJson,
-                reason: format!("The IPC message was invalid. ({:?})", e)
-            }
-            .to_json();
+            kind: ErrorKind::FailedToParseIPCJson,
+            reason: format!("The IPC message was invalid. ({:?})", e),
+        }
+        .to_json();
     }
     let request = request.unwrap();
     let res = process_request(STATE.lock().as_deref_mut().unwrap(), request);
@@ -110,10 +116,12 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     if state.com_instance.is_none() {
                         match connect(state) {
-                            Err(e) => return Response::Error {
-                                kind: ErrorKind::EngineProcessingError,
-                                reason: e,
-                            },
+                            Err(e) => {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: e,
+                                }
+                            }
                             Ok(_) => (),
                         }
                     }
@@ -129,18 +137,26 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     let tcode = i.parameters["tcode"].value_string();
 
                     match get_session(state) {
-                        Ok(session) => if let Err(e) = session.start_transaction(tcode.clone()) {
-                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't execute transaction. {e}") }
-                        },
-                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
+                        Ok(session) => {
+                            if let Err(e) = session.start_transaction(tcode.clone()) {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: format!("Couldn't execute transaction. {e}"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
                     }
 
-                    evidence.push(vec![
-                        Evidence {
-                            label: "SAP Transaction".to_owned(),
-                            content: EvidenceContent::Textual(format!("Ran transaction '{tcode}'.")),
-                        }
-                    ]);
+                    evidence.push(vec![Evidence {
+                        label: "SAP Transaction".to_owned(),
+                        content: EvidenceContent::Textual(format!("Ran transaction '{tcode}'.")),
+                    }]);
                     output.push(HashMap::new());
                 } else if i.instruction == *INSTRUCTION_SET_TEXT_VALUE.id() {
                     // Validate parameters
@@ -152,18 +168,35 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     let value = i.parameters["value"].value_string();
 
                     match get_session(state) {
-                        Ok(session) => if let Ok(wnd) = session.find_by_id(target.clone()) {
-                            if let Err(reason) = match wnd {
-                                SAPComponent::GuiTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
-                                SAPComponent::GuiCTextField(txt) => txt.set_text(value).map_err(|e| format!("Can't set text: {e}")),
-                                _ => Err(format!("No valid target to set text.")),
-                            } {
-                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
+                        Ok(session) => {
+                            if let Ok(wnd) = session.find_by_id(target.clone()) {
+                                if let Err(reason) = match wnd {
+                                    SAPComponent::GuiTextField(txt) => txt
+                                        .set_text(value)
+                                        .map_err(|e| format!("Can't set text: {e}")),
+                                    SAPComponent::GuiCTextField(txt) => txt
+                                        .set_text(value)
+                                        .map_err(|e| format!("Can't set text: {e}")),
+                                    _ => Err("No valid target to set text.".to_string()),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: format!("Couldn't find {target}."),
+                                };
                             }
-                        } else {
-                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: format!("Couldn't find {target}.") };
-                        },
-                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
                     }
 
                     evidence.push(vec![]);
@@ -177,17 +210,32 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     let key = i.parameters["key"].value_i32();
 
                     match get_session(state) {
-                        Ok(session) => if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
-                            if let Err(reason) = match wnd {
-                                SAPComponent::GuiMainWindow(wnd) => wnd.send_v_key(key).map_err(|e| format!("Couldn't send VKey: {e}")),
-                                _ => Err(String::from("SAP window not open")),
-                            } {
-                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
+                        Ok(session) => {
+                            if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
+                                if let Err(reason) = match wnd {
+                                    SAPComponent::GuiMainWindow(wnd) => wnd
+                                        .send_v_key(key)
+                                        .map_err(|e| format!("Couldn't send VKey: {e}")),
+                                    _ => Err(String::from("SAP window not open")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("SAP window couldn't be requested."),
+                                };
                             }
-                        } else {
-                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("SAP window couldn't be requested.") };
-                        },
-                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
                     }
 
                     evidence.push(vec![]);
@@ -201,17 +249,32 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     let id = i.parameters["target"].value_string();
 
                     match get_session(state) {
-                        Ok(session) => if let Ok(comp) = session.find_by_id(id) {
-                            if let Err(reason) = match comp {
-                                SAPComponent::GuiButton(b) => b.press().map_err(|e| format!("Couldn't press button: {e}")),
-                                _ => Err(String::from("Tried to press a non-button")),
-                            } {
-                                return Response::Error { kind: ErrorKind::EngineProcessingError, reason }
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiButton(b) => {
+                                        b.press().map_err(|e| format!("Couldn't press button: {e}"))
+                                    }
+                                    _ => Err(String::from("Tried to press a non-button")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find component"),
+                                };
                             }
-                        } else {
-                            return Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("Failed to find component") };
-                        },
-                        Err(e) => return Response::Error { kind: ErrorKind::EngineProcessingError, reason: e }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
                     }
 
                     evidence.push(vec![]);
@@ -232,17 +295,9 @@ fn process_request(state: &mut State, request: Request) -> Response {
     }
 }
 
-fn connect(state: &mut State) -> std::result::Result<GuiSession, String> {
+fn connect(state: &mut State) -> std::result::Result<(), String> {
     let com_instance = SAPComInstance::new().map_err(|_| "Couldn't get COM instance")?;
-    state.com_instance = Some(com_instance);
-    get_session(state)
-}
-
-/// Get the SAP session.
-fn get_session(state: &mut State) -> std::result::Result<GuiSession, String> {
-    let wrapper = state.com_instance
-        .as_ref()
-        .ok_or("SAP Wrapper not initialised")?
+    let wrapper = com_instance
         .sap_wrapper()
         .map_err(|e| format!("Couldn't get SAP wrapper: {e}"))?;
     let engine = wrapper
@@ -255,7 +310,11 @@ fn get_session(state: &mut State) -> std::result::Result<GuiSession, String> {
         .map_err(|e| format!("Couldn't get child of GuiApplication: {e}"))?
     {
         SAPComponent::GuiConnection(conn) => conn,
-        _ => return Err(String::from("Expected GuiConnection, but got something else!")),
+        _ => {
+            return Err(String::from(
+                "Expected GuiConnection, but got something else!",
+            ))
+        }
     };
     let session = match sap_scripting::GuiConnection_Impl::children(&connection)
         .map_err(|e| format!("Couldn't get GuiConnection children: {e}"))?
@@ -266,5 +325,15 @@ fn get_session(state: &mut State) -> std::result::Result<GuiSession, String> {
         _ => return Err(String::from("Expected GuiSession, but got something else!")),
     };
 
-    Ok(session)
+    state.com_instance = Some(com_instance);
+    state.session = Some(session);
+
+    Ok(())
+}
+
+fn get_session(state: &State) -> std::result::Result<&GuiSession, String> {
+    state
+        .session
+        .as_ref()
+        .ok_or("GuiSession not initialised".to_string())
 }
