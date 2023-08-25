@@ -54,6 +54,13 @@ lazy_static! {
     )
     .with_parameter("target", "Target", ParameterKind::String)
     .with_parameter("state", "Checked", ParameterKind::Boolean);
+    static ref INSTRUCTION_GET_STATUSBAR_STATE: Instruction = Instruction::new(
+        "sap-get-statusbar-state",
+        "Get Status Bar State",
+        "Get the type of message displayed in the status bar shown at the bottom of the SAP window. This could be 'S' (Success), 'W' (Warning), 'E' (Error), 'A' (Abort), 'I' (Information) or '' (No Status).",
+    )
+    .with_parameter("target", "Target (usually 'wnd[0]/sbar')", ParameterKind::String)
+    .with_output("status", "Status", ParameterKind::String);
     static ref STATE: Mutex<State> = Mutex::new(State::default());
 }
 
@@ -106,6 +113,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     INSTRUCTION_SEND_KEY.clone(),
                     INSTRUCTION_PRESS_BUTTON.clone(),
                     INSTRUCTION_SET_CHECKBOX.clone(),
+                    INSTRUCTION_GET_STATUSBAR_STATE.clone(),
                 ],
             }
         }
@@ -324,6 +332,51 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     evidence.push(vec![]);
                     output.push(HashMap::new());
+                } else if i.instruction == *INSTRUCTION_GET_STATUSBAR_STATE.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_GET_STATUSBAR_STATE.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+                    let mut o = HashMap::new();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiStatusbar(s) => {
+                                        if let Ok(status) = s.message_type() {
+                                            o.insert("status".to_string(), ParameterValue::String(status));
+                                            Ok(())
+                                        } else {
+                                            Err(String::from("The statusbar had no message type."))
+                                        }
+                                    }
+                                    _ => Err(String::from("The statusbar was invalid")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find status bar"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(o);
                 } else {
                     return Response::Error {
                         kind: ErrorKind::InvalidInstruction,
