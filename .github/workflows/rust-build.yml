@@ -22,12 +22,12 @@ jobs:
           override: true
 
       - name: Build
-        run: cargo build --release
+        run: cargo build
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: target/i686-pc-windows-msvc/release/testangel_sap.dll
+          files: target/x86_64-pc-windows-msvc/release/testangel_sap.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

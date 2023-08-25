@@ -1,6 +1,6 @@
 [package]
 name = "testangel-sap"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = [ "Lily Hopkins <lily@hpkns.uk>" ]
 description = "TestAngel engine for interaction with SAP systems."
@@ -11,5 +11,6 @@ crate-type = [ "cdylib" ]
 
 [dependencies]
 lazy_static = "1.4.0"
+once_cell = "1.18.0"
 sap-scripting = "0.3.1"
 testangel-ipc = { git = "https://github.com/lilopkins/testangel.git" }
