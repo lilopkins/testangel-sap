@@ -1,6 +1,6 @@
 [package]
 name = "testangel-sap"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = [ "Lily Hopkins <lily@hpkns.uk>" ]
 description = "TestAngel engine for interaction with SAP systems."
