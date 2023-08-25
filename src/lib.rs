@@ -47,6 +47,13 @@ lazy_static! {
         "Press a button in the UI.",
     )
     .with_parameter("target", "Target", ParameterKind::String);
+    static ref INSTRUCTION_SET_CHECKBOX: Instruction = Instruction::new(
+        "sap-set-checkbox",
+        "Set Checkbox",
+        "Set the state of a checkbox in the UI.",
+    )
+    .with_parameter("target", "Target", ParameterKind::String)
+    .with_parameter("state", "Checked", ParameterKind::Boolean);
     static ref STATE: Mutex<State> = Mutex::new(State::default());
 }
 
@@ -88,9 +95,6 @@ fn process_request(state: &mut State, request: Request) -> Response {
             *state = State::default();
             Response::StateReset
         }
-        Request::ShutDown => {
-            std::process::exit(0);
-        }
         Request::Instructions => {
             // Provide a list of instructions this engine can run.
             Response::Instructions {
@@ -101,6 +105,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     INSTRUCTION_SET_TEXT_VALUE.clone(),
                     INSTRUCTION_SEND_KEY.clone(),
                     INSTRUCTION_PRESS_BUTTON.clone(),
+                    INSTRUCTION_SET_CHECKBOX.clone(),
                 ],
             }
         }
@@ -256,6 +261,46 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                         b.press().map_err(|e| format!("Couldn't press button: {e}"))
                                     }
                                     _ => Err(String::from("Tried to press a non-button")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find component"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(HashMap::new());
+                } else if i.instruction == *INSTRUCTION_SET_CHECKBOX.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_SET_CHECKBOX.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+                    let cb_state = i.parameters["state"].value_bool();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiCheckBox(c) => {
+                                        c.set_selected(cb_state).map_err(|e| format!("Couldn't set checkbox: {e}"))
+                                    }
+                                    _ => Err(String::from("Tried to check a non-checkbox")),
                                 } {
                                     return Response::Error {
                                         kind: ErrorKind::EngineProcessingError,
