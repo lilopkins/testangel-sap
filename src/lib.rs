@@ -75,6 +75,31 @@ lazy_static! {
     )
     .with_parameter("target", "Target (usually 'wnd[0]/sbar')", ParameterKind::String)
     .with_output("status", "Status", ParameterKind::String);
+    static ref INSTRUCTION_GRID_GET_ROW_COUNT: Instruction = Instruction::new(
+        "sap-grid-get-row-count",
+        "Grid: Get Row Count",
+        "Get the number of rows in a grid.",
+    )
+    .with_parameter("target", "Target Grid", ParameterKind::String)
+    .with_output("value", "Number of rows", ParameterKind::Integer);
+    static ref INSTRUCTION_GRID_CLICK_CELL: Instruction = Instruction::new(
+        "sap-grid-click-cell",
+        "Grid: Click or Double Click Cell",
+        "Click or double click a cell.",
+    )
+    .with_parameter("target", "Target Grid", ParameterKind::String)
+    .with_parameter("row", "Row", ParameterKind::Integer)
+    .with_parameter("col", "Column", ParameterKind::String)
+    .with_parameter("double", "Double click", ParameterKind::Boolean);
+    static ref INSTRUCTION_GRID_GET_CELL_VALUE: Instruction = Instruction::new(
+        "sap-grid-get-cell-value",
+        "Grid: Get Cell Value",
+        "Get the value of a grid cell.",
+    )
+    .with_parameter("target", "Target Grid", ParameterKind::String)
+    .with_parameter("row", "Row", ParameterKind::Integer)
+    .with_parameter("col", "Column", ParameterKind::String)
+    .with_output("value", "Value", ParameterKind::String);
     static ref STATE: Mutex<State> = Mutex::new(State::default());
 }
 
@@ -130,6 +155,9 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     INSTRUCTION_PRESS_BUTTON.clone(),
                     INSTRUCTION_SET_CHECKBOX.clone(),
                     INSTRUCTION_GET_STATUSBAR_STATE.clone(),
+                    INSTRUCTION_GRID_GET_ROW_COUNT.clone(),
+                    INSTRUCTION_GRID_CLICK_CELL.clone(),
+                    INSTRUCTION_GRID_GET_CELL_VALUE.clone(),
                 ],
             }
         }
@@ -454,6 +482,145 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                     SAPComponent::GuiStatusbar(s) => {
                                         if let Ok(status) = s.message_type() {
                                             o.insert("status".to_string(), ParameterValue::String(status));
+                                            Ok(())
+                                        } else {
+                                            Err(String::from("The statusbar had no message type."))
+                                        }
+                                    }
+                                    _ => Err(String::from("The statusbar was invalid")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find status bar"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(o);
+                } else if i.instruction == *INSTRUCTION_GRID_GET_ROW_COUNT.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_GRID_GET_ROW_COUNT.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+                    let mut o = HashMap::new();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiGridView(g) => {
+                                        if let Ok(row_count) = g.row_count() {
+                                            // ! This might drop some precision in some situations!
+                                            o.insert("value".to_string(), ParameterValue::Integer(row_count as i32));
+                                            Ok(())
+                                        } else {
+                                            Err(String::from("The grid had no row count."))
+                                        }
+                                    }
+                                    _ => Err(String::from("The grid was invalid")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find grid"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(o);
+                } else if i.instruction == *INSTRUCTION_GRID_CLICK_CELL.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_GRID_CLICK_CELL.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+                    let row = i.parameters["row"].value_i32();
+                    let col = i.parameters["col"].value_string();
+                    let double = i.parameters["double"].value_bool();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiGridView(g) => {
+                                        if double {
+                                            g.double_click(row as i64, col).map_err(|_| String::from("The grid couldn't be double clicked."))
+                                        } else {
+                                            g.click(row as i64, col).map_err(|_| String::from("The grid couldn't be clicked."))
+                                        }
+                                    }
+                                    _ => Err(String::from("The grid was invalid")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find grid"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(HashMap::new());
+                } else if i.instruction == *INSTRUCTION_GRID_GET_CELL_VALUE.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_GRID_GET_CELL_VALUE.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+                    let row = i.parameters["row"].value_i32();
+                    let col = i.parameters["col"].value_string();
+                    let mut o = HashMap::new();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiGridView(g) => {
+                                        if let Ok(value) = g.get_cell_value(row as i64, col) {
+                                            o.insert("value".to_string(), ParameterValue::String(value));
                                             Ok(())
                                         } else {
                                             Err(String::from("The statusbar had no message type."))
