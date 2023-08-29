@@ -307,7 +307,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     }
 
                     evidence.push(vec![]);
-                    output.push(HashMap::new());
+                    output.push(o);
                 } else if i.instruction == *INSTRUCTION_SET_COMBOBOX_KEY.id() {
                     // Validate parameters
                     if let Err((kind, reason)) = INSTRUCTION_SET_COMBOBOX_KEY.validate(&i) {
