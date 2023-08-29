@@ -71,9 +71,9 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "sap-scripting"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49be970dfb1cff43cd28f29a33407ecad3c76c2a9d182b6a136cae786b3004fd"
+checksum = "26319f0368204a19e5f5b63da8468c2638caa710ed50bbe4776322e81be355ae"
 dependencies = [
  "com-shim",
  "log",
@@ -82,18 +82,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.186"
+version = "1.0.188"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f5db24220c009de9bd45e69fb2938f4b6d2df856aa9304ce377b3180f83b7c1"
+checksum = "cf9e0fcba69a370eed61bcf2b728575f726b50b55cba78064753d708ddc7549e"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.186"
+version = "1.0.188"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ad697f7e0b65af4983a4ce8f56ed5b357e8d3c36651bf6a7e13639c17b8e670"
+checksum = "4eca7ac642d82aa35b60049a6eccb4be6be75e599bd2e9adb5f875a737654af2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -124,8 +124,8 @@ dependencies = [
 
 [[package]]
 name = "testangel-ipc"
-version = "0.8.0"
-source = "git+https://github.com/lilopkins/testangel.git#472a60a4ac77b431e2a210a900454911819cf057"
+version = "0.9.0"
+source = "git+https://github.com/lilopkins/testangel.git#3b63ba544d240d515f0db40e677399c1cd6890da"
 dependencies = [
  "serde",
  "serde_json",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "lazy_static",
  "sap-scripting",
