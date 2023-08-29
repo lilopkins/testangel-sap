@@ -71,9 +71,9 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "sap-scripting"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26319f0368204a19e5f5b63da8468c2638caa710ed50bbe4776322e81be355ae"
+checksum = "1d5f1089fd09124384f64a43ad9d24d2c04986f60734399a4468d62ca10d8614"
 dependencies = [
  "com-shim",
  "log",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "lazy_static",
  "sap-scripting",
