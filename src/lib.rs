@@ -285,7 +285,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                         .map_err(|e| format!("Can't get text: {e}")),
                                     _ => Err("No valid target to get text.".to_string()),
                                 } {
-                                    Ok(text) => { o.insert("text".to_string(), ParameterValue::String(text)); }
+                                    Ok(text) => { o.insert("value".to_string(), ParameterValue::String(text)); }
                                     Err(reason) => return Response::Error {
                                         kind: ErrorKind::EngineProcessingError,
                                         reason,
