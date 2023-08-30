@@ -100,6 +100,12 @@ lazy_static! {
     .with_parameter("row", "Row", ParameterKind::Integer)
     .with_parameter("col", "Column", ParameterKind::String)
     .with_output("value", "Value", ParameterKind::String);
+    static ref INSTRUCTION_TAB_SELECT: Instruction = Instruction::new(
+        "sap-tab-select",
+        "Select Tab",
+        "Select a tab in a tab panel.",
+    )
+    .with_parameter("target", "Target Tab", ParameterKind::String);
     static ref STATE: Mutex<State> = Mutex::new(State::default());
 }
 
@@ -271,25 +277,29 @@ fn process_request(state: &mut State, request: Request) -> Response {
                         Ok(session) => {
                             if let Ok(wnd) = session.find_by_id(target.clone()) {
                                 match match wnd {
-                                    SAPComponent::GuiTextField(txt) => txt
-                                        .text()
-                                        .map_err(|e| format!("Can't get text: {e}")),
-                                    SAPComponent::GuiCTextField(txt) => txt
-                                        .text()
-                                        .map_err(|e| format!("Can't get text: {e}")),
-                                    SAPComponent::GuiFrameWindow(txt) => txt
-                                        .text()
-                                        .map_err(|e| format!("Can't get text: {e}")),
-                                    SAPComponent::GuiMainWindow(txt) => txt
-                                        .text()
-                                        .map_err(|e| format!("Can't get text: {e}")),
+                                    SAPComponent::GuiTextField(txt) => {
+                                        txt.text().map_err(|e| format!("Can't get text: {e}"))
+                                    }
+                                    SAPComponent::GuiCTextField(txt) => {
+                                        txt.text().map_err(|e| format!("Can't get text: {e}"))
+                                    }
+                                    SAPComponent::GuiFrameWindow(txt) => {
+                                        txt.text().map_err(|e| format!("Can't get text: {e}"))
+                                    }
+                                    SAPComponent::GuiMainWindow(txt) => {
+                                        txt.text().map_err(|e| format!("Can't get text: {e}"))
+                                    }
                                     _ => Err("No valid target to get text.".to_string()),
                                 } {
-                                    Ok(text) => { o.insert("value".to_string(), ParameterValue::String(text)); }
-                                    Err(reason) => return Response::Error {
-                                        kind: ErrorKind::EngineProcessingError,
-                                        reason,
-                                    },
+                                    Ok(text) => {
+                                        o.insert("value".to_string(), ParameterValue::String(text));
+                                    }
+                                    Err(reason) => {
+                                        return Response::Error {
+                                            kind: ErrorKind::EngineProcessingError,
+                                            reason,
+                                        }
+                                    }
                                 }
                             } else {
                                 return Response::Error {
@@ -439,9 +449,9 @@ fn process_request(state: &mut State, request: Request) -> Response {
                         Ok(session) => {
                             if let Ok(comp) = session.find_by_id(id) {
                                 if let Err(reason) = match comp {
-                                    SAPComponent::GuiCheckBox(c) => {
-                                        c.set_selected(cb_state).map_err(|e| format!("Couldn't set checkbox: {e}"))
-                                    }
+                                    SAPComponent::GuiCheckBox(c) => c
+                                        .set_selected(cb_state)
+                                        .map_err(|e| format!("Couldn't set checkbox: {e}")),
                                     _ => Err(String::from("Tried to check a non-checkbox")),
                                 } {
                                     return Response::Error {
@@ -481,7 +491,10 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                 if let Err(reason) = match comp {
                                     SAPComponent::GuiStatusbar(s) => {
                                         if let Ok(status) = s.message_type() {
-                                            o.insert("status".to_string(), ParameterValue::String(status));
+                                            o.insert(
+                                                "status".to_string(),
+                                                ParameterValue::String(status),
+                                            );
                                             Ok(())
                                         } else {
                                             Err(String::from("The statusbar had no message type."))
@@ -527,7 +540,10 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                     SAPComponent::GuiGridView(g) => {
                                         if let Ok(row_count) = g.row_count() {
                                             // ! This might drop some precision in some situations!
-                                            o.insert("value".to_string(), ParameterValue::Integer(row_count as i32));
+                                            o.insert(
+                                                "value".to_string(),
+                                                ParameterValue::Integer(row_count as i32),
+                                            );
                                             Ok(())
                                         } else {
                                             Err(String::from("The grid had no row count."))
@@ -574,9 +590,13 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                 if let Err(reason) = match comp {
                                     SAPComponent::GuiGridView(g) => {
                                         if double {
-                                            g.double_click(row as i64, col).map_err(|_| String::from("The grid couldn't be double clicked."))
+                                            g.double_click(row as i64, col).map_err(|_| {
+                                                String::from("The grid couldn't be double clicked.")
+                                            })
                                         } else {
-                                            g.click(row as i64, col).map_err(|_| String::from("The grid couldn't be clicked."))
+                                            g.click(row as i64, col).map_err(|_| {
+                                                String::from("The grid couldn't be clicked.")
+                                            })
                                         }
                                     }
                                     _ => Err(String::from("The grid was invalid")),
@@ -620,7 +640,10 @@ fn process_request(state: &mut State, request: Request) -> Response {
                                 if let Err(reason) = match comp {
                                     SAPComponent::GuiGridView(g) => {
                                         if let Ok(value) = g.get_cell_value(row as i64, col) {
-                                            o.insert("value".to_string(), ParameterValue::String(value));
+                                            o.insert(
+                                                "value".to_string(),
+                                                ParameterValue::String(value),
+                                            );
                                             Ok(())
                                         } else {
                                             Err(String::from("The statusbar had no message type."))
@@ -650,6 +673,45 @@ fn process_request(state: &mut State, request: Request) -> Response {
 
                     evidence.push(vec![]);
                     output.push(o);
+                } else if i.instruction == *INSTRUCTION_TAB_SELECT.id() {
+                    // Validate parameters
+                    if let Err((kind, reason)) = INSTRUCTION_TAB_SELECT.validate(&i) {
+                        return Response::Error { kind, reason };
+                    }
+
+                    let id = i.parameters["target"].value_string();
+
+                    match get_session(state) {
+                        Ok(session) => {
+                            if let Ok(comp) = session.find_by_id(id) {
+                                if let Err(reason) = match comp {
+                                    SAPComponent::GuiTab(g) => g.select().map_err(|_| {
+                                        String::from("The tab couldn't be selected.")
+                                    }),
+                                    _ => Err(String::from("The tab was invalid")),
+                                } {
+                                    return Response::Error {
+                                        kind: ErrorKind::EngineProcessingError,
+                                        reason,
+                                    };
+                                }
+                            } else {
+                                return Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: String::from("Failed to find tab"),
+                                };
+                            }
+                        }
+                        Err(e) => {
+                            return Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason: e,
+                            }
+                        }
+                    }
+
+                    evidence.push(vec![]);
+                    output.push(HashMap::new());
                 } else {
                     return Response::Error {
                         kind: ErrorKind::InvalidInstruction,
