@@ -160,6 +160,7 @@ fn process_request(state: &mut State, request: Request) -> Response {
                     INSTRUCTION_SEND_KEY.clone(),
                     INSTRUCTION_PRESS_BUTTON.clone(),
                     INSTRUCTION_SET_CHECKBOX.clone(),
+                    INSTRUCTION_TAB_SELECT.clone(),
                     INSTRUCTION_GET_STATUSBAR_STATE.clone(),
                     INSTRUCTION_GRID_GET_ROW_COUNT.clone(),
                     INSTRUCTION_GRID_CLICK_CELL.clone(),
