@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{fs, sync::Mutex};
 
 use lazy_static::lazy_static;
 use sap_scripting::*;
@@ -66,6 +66,73 @@ lazy_static! {
 
             None
         })
+    .with_instruction(
+        Instruction::new(
+            "sap-screenshot",
+            "Screenshot as Evidence",
+            "Take a screenshot of a SAP window"
+        )
+        .with_parameter("label", "Evidence Label", ParameterKind::String)
+        .with_parameter("target", "Target (usually 'wnd[0]')", ParameterKind::String),
+        |state, params, _output, evidence| {
+            let mut state = state.lock().expect("state must be lockable");
+            let label = params["label"].value_string();
+            let target = params["target"].value_string();
+
+            match get_session(&mut *state) {
+                Ok(session) => {
+                    if let Ok(wnd) = session.find_by_id(target.clone()) {
+                        match match wnd {
+                            SAPComponent::GuiMainWindow(wnd) => wnd
+                                .hard_copy("evidence.png".to_string(), 2)
+                                .map_err(|e| format!("Can't screenshot: {e}")),
+                            SAPComponent::GuiFrameWindow(wnd) => wnd
+                                .hard_copy("evidence.png".to_string(), 2)
+                                .map_err(|e| format!("Can't screenshot: {e}")),
+                            _ => Err("No valid target to screenshot.".to_string()),
+                        } {
+                            Ok(path) => {
+                                // Read path, add to evidence, delete file
+                                match fs::read(&path) {
+                                    Ok(data) => {
+                                        use base64::{Engine as _, engine::general_purpose};
+                                        let b64_data = general_purpose::STANDARD.encode(&data);
+                                        evidence.push(Evidence { label, content: EvidenceContent::ImageAsPngBase64(b64_data) });
+
+                                        // try to delete, but don't worry if we can't
+                                        let _ = fs::remove_file(path);
+                                    },
+                                    Err(e) => {
+                                        return Some(Response::Error {
+                                            kind: ErrorKind::EngineProcessingError,
+                                            reason: format!("Failed to read screenshot: {e}"),
+                                        })
+                                    }
+                                }
+                            }
+                            Err(reason) => return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: format!("Couldn't find {target}."),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+
+            None
+        }
+    )
     .with_instruction(
         Instruction::new(
             "sap-set-text-value",
