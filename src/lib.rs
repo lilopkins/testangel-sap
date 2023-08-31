@@ -278,7 +278,7 @@ lazy_static! {
                     if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
                         if let Err(reason) = match wnd {
                             SAPComponent::GuiMainWindow(wnd) => wnd
-                                .send_v_key(key)
+                                .send_v_key(key as i16)
                                 .map_err(|e| format!("Couldn't send VKey: {e}")),
                             _ => Err(String::from("SAP window not open")),
                         } {
@@ -505,7 +505,7 @@ lazy_static! {
                     if let Ok(comp) = session.find_by_id(id) {
                         match comp {
                             SAPComponent::GuiGridView(g) => {
-                                if let Err(reason) = g.set_current_cell(row as i64, col).map_err(|e| format!("Couldn't select cell in grid: {e}")) {
+                                if let Err(reason) = g.set_current_cell(row, col).map_err(|e| format!("Couldn't select cell in grid: {e}")) {
                                     return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
                                 }
                                 if double {
@@ -561,7 +561,7 @@ lazy_static! {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
                             SAPComponent::GuiGridView(g) => {
-                                match g.get_cell_value(row as i64, col) {
+                                match g.get_cell_value(row, col) {
                                     Ok(value) => {
                                         output.insert(
                                             "value".to_string(),
@@ -658,7 +658,7 @@ lazy_static! {
             let mut state = state.lock().expect("state must be lockable");
             let id = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(&mut state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {

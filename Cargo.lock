@@ -10,9 +10,9 @@ checksum = "414dcefbc63d77c526a76b3afcf6fbb9b5e2791c19c3aa2297733208750c6e53"
 
 [[package]]
 name = "com-shim"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d41a8a89cc987776a65a349cd4a2ab168b195bdba330e879d9b8c9ca49a9bb97"
+checksum = "86aa85aa6279248ef8a8eb641576c052d8877365974cd99e6bf8728c06e75ff4"
 dependencies = [
  "com-shim-macro",
  "windows",
@@ -20,9 +20,9 @@ dependencies = [
 
 [[package]]
 name = "com-shim-macro"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06dd716285afaf9d5514c631c755d4e5fc1268a495d72117bf5f4f6a47014575"
+checksum = "4c28237b3ad44461f9109728aa1fa34ab69601a76145df6f9e841bd97157b6e8"
 dependencies = [
  "heck",
 ]
@@ -77,9 +77,9 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "sap-scripting"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2ae05b5c3189c7ad0c5abf08d1df5eb3c1879b0b6833d9eff8acec3bbc9b253"
+checksum = "c3b4569fabf314a07fb298e4b06ef6b9131e2debb6f9e046bfff312d35835dd7"
 dependencies = [
  "com-shim",
  "log",

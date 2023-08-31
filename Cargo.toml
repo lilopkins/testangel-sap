@@ -12,5 +12,5 @@ crate-type = [ "cdylib" ]
 [dependencies]
 base64 = "0.21.3"
 lazy_static = "1.4.0"
-sap-scripting = "0.3.4"
+sap-scripting = "0.3.5"
 testangel-engine = { git = "https://github.com/lilopkins/testangel.git" }
