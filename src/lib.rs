@@ -20,17 +20,14 @@ lazy_static! {
             "Connect to an SAP instance that the user already has open.\nIf they have multiple open, this will give access to any of the open windows (although most instructions use the main window).\nThis will do nothing if we already hold a connection.",
         ),
         |state: &mut Mutex<State>, _params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
 
             if state.com_instance.is_none() {
-                match connect(&mut *state) {
-                    Err(e) => {
-                        return Some(Response::Error {
-                            kind: ErrorKind::EngineProcessingError,
-                            reason: e,
-                        })
-                    }
-                    Ok(_) => (),
+                if let Err(reason) = connect(state) {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason,
+                    })
                 }
             }
 
@@ -44,10 +41,10 @@ lazy_static! {
         )
         .with_parameter("tcode", "Transaction Code", ParameterKind::String),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let tcode = params["tcode"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Err(e) = session.start_transaction(tcode.clone()) {
                         return Some(Response::Error {
@@ -75,11 +72,11 @@ lazy_static! {
         .with_parameter("label", "Evidence Label", ParameterKind::String)
         .with_parameter("target", "Target (usually 'wnd[0]')", ParameterKind::String),
         |state, params, _output, evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let label = params["label"].value_string();
             let target = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(wnd) = session.find_by_id(target.clone()) {
                         match match wnd {
@@ -96,7 +93,7 @@ lazy_static! {
                                 match fs::read(&path) {
                                     Ok(data) => {
                                         use base64::{Engine as _, engine::general_purpose};
-                                        let b64_data = general_purpose::STANDARD.encode(&data);
+                                        let b64_data = general_purpose::STANDARD.encode(data);
                                         evidence.push(Evidence { label, content: EvidenceContent::ImageAsPngBase64(b64_data) });
 
                                         // try to delete, but don't worry if we can't
@@ -141,10 +138,10 @@ lazy_static! {
         .with_parameter("target", "Target", ParameterKind::String)
         .with_output("exists", "Exists", ParameterKind::Boolean),
         |state, params, output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let target = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     output.insert("exists".to_string(), ParameterValue::Boolean(session.find_by_id(target.clone()).is_ok()));
                 }
@@ -167,11 +164,11 @@ lazy_static! {
         .with_parameter("target", "Target", ParameterKind::String)
         .with_parameter("value", "Value", ParameterKind::String),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let target = params["target"].value_string();
             let value = params["value"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(wnd) = session.find_by_id(target.clone()) {
                         if let Err(reason) = match wnd {
@@ -214,10 +211,10 @@ lazy_static! {
         .with_parameter("target", "Target", ParameterKind::String)
         .with_output("value", "Value", ParameterKind::String),
         |state, params, output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let target = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(wnd) = session.find_by_id(target.clone()) {
                         match match wnd {
@@ -269,11 +266,11 @@ lazy_static! {
         )
         .with_parameter("key", "Key (VKey)", ParameterKind::Integer),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
 
             let key = params["key"].value_i32();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(wnd) = session.find_by_id("wnd[0]".to_owned()) {
                         if let Err(reason) = match wnd {
@@ -312,10 +309,10 @@ lazy_static! {
         )
         .with_parameter("target", "Target", ParameterKind::String),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
@@ -354,11 +351,11 @@ lazy_static! {
             .with_parameter("target", "Target", ParameterKind::String)
             .with_parameter("state", "Checked", ParameterKind::Boolean),
             |state, params, _output, _evidence| {
-                let mut state = state.lock().expect("state must be lockable");
+                let state = state.get_mut().expect("state must be lockable");
                 let id = params["target"].value_string();
                 let cb_state = params["state"].value_bool();
 
-                match get_session(&mut *state) {
+                match get_session(state) {
                     Ok(session) => {
                         if let Ok(comp) = session.find_by_id(id) {
                             if let Err(reason) = match comp {
@@ -397,11 +394,11 @@ lazy_static! {
         .with_parameter("target", "Target", ParameterKind::String)
         .with_parameter("key", "Key", ParameterKind::String),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let target = params["target"].value_string();
             let key = params["key"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(wnd) = session.find_by_id(target.clone()) {
                         if let Err(reason) = match wnd {
@@ -440,10 +437,10 @@ lazy_static! {
         .with_parameter("target", "Target Grid", ParameterKind::String)
         .with_output("value", "Number of rows", ParameterKind::Integer),
         |state, params, output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
@@ -452,7 +449,7 @@ lazy_static! {
                                     // ! This might drop some precision in some situations!
                                     output.insert(
                                         "value".to_string(),
-                                        ParameterValue::Integer(row_count as i32),
+                                        ParameterValue::Integer(row_count),
                                     );
                                     Ok(())
                                 } else {
@@ -494,13 +491,13 @@ lazy_static! {
         .with_parameter("col", "Column", ParameterKind::String)
         .with_parameter("double", "Double click", ParameterKind::Boolean),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
             let row = params["row"].value_i32();
             let col = params["col"].value_string();
             let double = params["double"].value_bool();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         match comp {
@@ -514,12 +511,10 @@ lazy_static! {
                                     }) {
                                         return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
                                     }
-                                } else {
-                                    if let Err(reason) = g.click_current_cell().map_err(|e| {
-                                        format!("The grid couldn't be clicked: {e}")
-                                    }) {
-                                        return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
-                                    }
+                                } else if let Err(reason) = g.click_current_cell().map_err(|e| {
+                                    format!("The grid couldn't be clicked: {e}")
+                                }) {
+                                    return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
                                 }
                             }
                             _ => return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("The grid was invalid.") }),
@@ -551,12 +546,12 @@ lazy_static! {
         .with_parameter("col", "Column", ParameterKind::String)
         .with_output("value", "Value", ParameterKind::String),
         |state, params, output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
             let row = params["row"].value_i32();
             let col = params["col"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
@@ -605,10 +600,10 @@ lazy_static! {
         .with_parameter("target", "Target (usually 'wnd[0]/sbar')", ParameterKind::String)
         .with_output("status", "Status", ParameterKind::String),
         |state, params, output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
 
-            match get_session(&mut *state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
@@ -655,10 +650,10 @@ lazy_static! {
         )
         .with_parameter("target", "Target Tab", ParameterKind::String),
         |state, params, _output, _evidence| {
-            let mut state = state.lock().expect("state must be lockable");
+            let state = state.get_mut().expect("state must be lockable");
             let id = params["target"].value_string();
 
-            match get_session(&mut state) {
+            match get_session(state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
