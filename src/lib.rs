@@ -131,8 +131,33 @@ lazy_static! {
             }
 
             None
-        }
-    )
+        })
+    .with_instruction(
+        Instruction::new(
+            "sap-does-element-exist",
+            "Does Element Exist",
+            "Check if an element exists and returns a boolean.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_output("exists", "Exists", ParameterKind::Boolean),
+        |state, params, output, _evidence| {
+            let mut state = state.lock().expect("state must be lockable");
+            let target = params["target"].value_string();
+
+            match get_session(&mut *state) {
+                Ok(session) => {
+                    output.insert("exists".to_string(), ParameterValue::Boolean(session.find_by_id(target.clone()).is_ok()));
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+
+            None
+        })
     .with_instruction(
         Instruction::new(
             "sap-set-text-value",
@@ -279,25 +304,68 @@ lazy_static! {
 
             None
         })
+    .with_instruction(
+        Instruction::new(
+            "sap-press-button",
+            "Press UI Button",
+            "Press a button in the UI.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String),
+        |state, params, _output, _evidence| {
+            let mut state = state.lock().expect("state must be lockable");
+            let id = params["target"].value_string();
+
+            match get_session(&mut *state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(id) {
+                        if let Err(reason) = match comp {
+                            SAPComponent::GuiButton(b) => {
+                                b.press().map_err(|e| format!("Couldn't press button: {e}"))
+                            }
+                            _ => Err(String::from("Tried to press a non-button")),
+                        } {
+                            return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: String::from("Failed to find component"),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+            None
+        })
         .with_instruction(
             Instruction::new(
-                "sap-press-button",
-                "Press UI Button",
-                "Press a button in the UI.",
+                "sap-set-checkbox",
+                "Checkbox: Set Value",
+                "Set the state of a checkbox in the UI.",
             )
-            .with_parameter("target", "Target", ParameterKind::String),
+            .with_parameter("target", "Target", ParameterKind::String)
+            .with_parameter("state", "Checked", ParameterKind::Boolean),
             |state, params, _output, _evidence| {
                 let mut state = state.lock().expect("state must be lockable");
                 let id = params["target"].value_string();
+                let cb_state = params["state"].value_bool();
 
                 match get_session(&mut *state) {
                     Ok(session) => {
                         if let Ok(comp) = session.find_by_id(id) {
                             if let Err(reason) = match comp {
-                                SAPComponent::GuiButton(b) => {
-                                    b.press().map_err(|e| format!("Couldn't press button: {e}"))
-                                }
-                                _ => Err(String::from("Tried to press a non-button")),
+                                SAPComponent::GuiCheckBox(c) => c
+                                    .set_selected(cb_state)
+                                    .map_err(|e| format!("Couldn't set checkbox: {e}")),
+                                _ => Err(String::from("Tried to check a non-checkbox")),
                             } {
                                 return Some(Response::Error {
                                     kind: ErrorKind::EngineProcessingError,
@@ -320,92 +388,49 @@ lazy_static! {
                 }
                 None
             })
-            .with_instruction(
-                Instruction::new(
-                    "sap-set-checkbox",
-                    "Checkbox: Set Value",
-                    "Set the state of a checkbox in the UI.",
-                )
-                .with_parameter("target", "Target", ParameterKind::String)
-                .with_parameter("state", "Checked", ParameterKind::Boolean),
-                |state, params, _output, _evidence| {
-                    let mut state = state.lock().expect("state must be lockable");
-                    let id = params["target"].value_string();
-                    let cb_state = params["state"].value_bool();
+    .with_instruction(
+        Instruction::new(
+            "sap-set-combobox-key",
+            "Combo Box: Set Key",
+            "Set the key (selected item) of the combo box.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_parameter("key", "Key", ParameterKind::String),
+        |state, params, _output, _evidence| {
+            let mut state = state.lock().expect("state must be lockable");
+            let target = params["target"].value_string();
+            let key = params["key"].value_string();
 
-                    match get_session(&mut *state) {
-                        Ok(session) => {
-                            if let Ok(comp) = session.find_by_id(id) {
-                                if let Err(reason) = match comp {
-                                    SAPComponent::GuiCheckBox(c) => c
-                                        .set_selected(cb_state)
-                                        .map_err(|e| format!("Couldn't set checkbox: {e}")),
-                                    _ => Err(String::from("Tried to check a non-checkbox")),
-                                } {
-                                    return Some(Response::Error {
-                                        kind: ErrorKind::EngineProcessingError,
-                                        reason,
-                                    })
-                                }
-                            } else {
-                                return Some(Response::Error {
-                                    kind: ErrorKind::EngineProcessingError,
-                                    reason: String::from("Failed to find component"),
-                                })
-                            }
-                        }
-                        Err(e) => {
+            match get_session(&mut *state) {
+                Ok(session) => {
+                    if let Ok(wnd) = session.find_by_id(target.clone()) {
+                        if let Err(reason) = match wnd {
+                            SAPComponent::GuiComboBox(cmb) => cmb
+                                .set_key(key)
+                                .map_err(|e| format!("Can't set combo box key: {e}")),
+                            _ => Err("No valid target to set combo box key.".to_string()),
+                        } {
                             return Some(Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
-                                reason: e,
+                                reason,
                             })
                         }
-                    }
-                    None
-                })
-        .with_instruction(
-            Instruction::new(
-                "sap-set-combobox-key",
-                "Combo Box: Set Key",
-                "Set the key (selected item) of the combo box.",
-            )
-            .with_parameter("target", "Target", ParameterKind::String)
-            .with_parameter("key", "Key", ParameterKind::String),
-            |state, params, _output, _evidence| {
-                let mut state = state.lock().expect("state must be lockable");
-                let target = params["target"].value_string();
-                let key = params["key"].value_string();
-
-                match get_session(&mut *state) {
-                    Ok(session) => {
-                        if let Ok(wnd) = session.find_by_id(target.clone()) {
-                            if let Err(reason) = match wnd {
-                                SAPComponent::GuiComboBox(cmb) => cmb
-                                    .set_key(key)
-                                    .map_err(|e| format!("Can't set combo box key: {e}")),
-                                _ => Err("No valid target to set combo box key.".to_string()),
-                            } {
-                                return Some(Response::Error {
-                                    kind: ErrorKind::EngineProcessingError,
-                                    reason,
-                                })
-                            }
-                        } else {
-                            return Some(Response::Error {
-                                kind: ErrorKind::EngineProcessingError,
-                                reason: format!("Couldn't find {target}."),
-                            })
-                        }
-                    }
-                    Err(e) => {
+                    } else {
                         return Some(Response::Error {
                             kind: ErrorKind::EngineProcessingError,
-                            reason: e,
+                            reason: format!("Couldn't find {target}."),
                         })
                     }
                 }
-                None
-            })
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+            None
+        })
     .with_instruction(
         Instruction::new(
             "sap-grid-get-row-count",
@@ -478,24 +503,26 @@ lazy_static! {
             match get_session(&mut *state) {
                 Ok(session) => {
                     if let Ok(comp) = session.find_by_id(id) {
-                        if let Err(reason) = match comp {
+                        match comp {
                             SAPComponent::GuiGridView(g) => {
+                                if let Err(reason) = g.set_current_cell(row as i64, col).map_err(|e| format!("Couldn't select cell in grid: {e}")) {
+                                    return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
+                                }
                                 if double {
-                                    g.double_click(row as i64, col).map_err(|_| {
-                                        String::from("The grid couldn't be double clicked.")
-                                    })
+                                    if let Err(reason) = g.double_click_current_cell().map_err(|e| {
+                                        format!("The grid couldn't be double clicked: {e}")
+                                    }) {
+                                        return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
+                                    }
                                 } else {
-                                    g.click(row as i64, col).map_err(|_| {
-                                        String::from("The grid couldn't be clicked.")
-                                    })
+                                    if let Err(reason) = g.click_current_cell().map_err(|e| {
+                                        format!("The grid couldn't be clicked: {e}")
+                                    }) {
+                                        return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason })
+                                    }
                                 }
                             }
-                            _ => Err(String::from("The grid was invalid")),
-                        } {
-                            return Some(Response::Error {
-                                kind: ErrorKind::EngineProcessingError,
-                                reason,
-                            })
+                            _ => return Some(Response::Error { kind: ErrorKind::EngineProcessingError, reason: String::from("The grid was invalid.") }),
                         }
                     } else {
                         return Some(Response::Error {
@@ -534,17 +561,18 @@ lazy_static! {
                     if let Ok(comp) = session.find_by_id(id) {
                         if let Err(reason) = match comp {
                             SAPComponent::GuiGridView(g) => {
-                                if let Ok(value) = g.get_cell_value(row as i64, col) {
-                                    output.insert(
-                                        "value".to_string(),
-                                        ParameterValue::String(value),
-                                    );
-                                    Ok(())
-                                } else {
-                                    Err(String::from("The statusbar had no message type."))
+                                match g.get_cell_value(row as i64, col) {
+                                    Ok(value) => {
+                                        output.insert(
+                                            "value".to_string(),
+                                            ParameterValue::String(value),
+                                        );
+                                        Ok(())
+                                    }
+                                    Err(e) => Err(format!("The value couldn't be read: {e}")),
                                 }
                             }
-                            _ => Err(String::from("The statusbar was invalid")),
+                            _ => Err(String::from("The grid view was invalid")),
                         } {
                             return Some(Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
@@ -554,7 +582,7 @@ lazy_static! {
                     } else {
                         return Some(Response::Error {
                             kind: ErrorKind::EngineProcessingError,
-                            reason: String::from("Failed to find status bar"),
+                            reason: String::from("Failed to find grid view"),
                         })
                     }
                 }
