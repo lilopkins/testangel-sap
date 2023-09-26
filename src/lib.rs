@@ -157,6 +157,99 @@ lazy_static! {
         })
     .with_instruction(
         Instruction::new(
+            "sap-visualise-element",
+            "Highlight Element",
+            "Highlight an element by drawing a red box around it. Useful just before screenshotting."
+        )
+        .with_parameter("target", "Target", ParameterKind::String),
+        |state, params, _output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let target = params["target"].value_string();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(target.clone()) {
+                        if let Err(reason) = match comp {
+                            SAPComponent::GuiBarChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiButton(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCalendar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCheckBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiColorSelector(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiComboBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiComboBoxControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiContainerShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCTextField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCustomControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiDialogShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiEAIViewer2D(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiEAIViewer3D(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiFrameWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGOSShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGraphAdapt(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGridView(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiHTMLViewer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiInputFieldControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiLabel(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMainWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMap(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMenu(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMenubar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiModalWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiNetChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiOfficeIntegration(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiOkCodeField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiPasswordField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiPicture(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiRadioButton(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSapChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiScrollContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSimpleContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSplit(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSplitterContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStage(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStatusbar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStatusPane(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTab(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTableControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTabStrip(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTextedit(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTextField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTitlebar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiToolbar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTree(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiUserArea(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVComponent(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVHViewSwitch(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            _ => Err("No valid target to set text.".to_string()),
+                        } {
+                            return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: format!("Couldn't find {target}."),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+
+            None
+        })
+    .with_instruction(
+        Instruction::new(
             "sap-set-text-value",
             "Text Value: Set",
             "Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
