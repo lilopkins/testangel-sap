@@ -157,6 +157,194 @@ lazy_static! {
         })
     .with_instruction(
         Instruction::new(
+            "sap-component-type",
+            "Component Type",
+            "Return the type string of the component."
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_output("type", "Type", ParameterKind::String),
+        |state, params, output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let target = params["target"].value_string();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(target.clone()) {
+                        match match comp {
+                            SAPComponent::GuiBarChart(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiBox(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiButton(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiCalendar(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiChart(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiCheckBox(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiColorSelector(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiComboBox(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiComboBoxControl(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiContainerShell(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiCTextField(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiCustomControl(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiDialogShell(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiEAIViewer2D(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiEAIViewer3D(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiFrameWindow(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiGOSShell(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiGraphAdapt(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiGridView(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiHTMLViewer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiInputFieldControl(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiLabel(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiMainWindow(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiMap(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiMenu(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiMenubar(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiModalWindow(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiNetChart(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiOfficeIntegration(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiOkCodeField(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiPasswordField(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiPicture(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiRadioButton(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiSapChart(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiScrollContainer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiShell(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiSimpleContainer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiSplit(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiSplitterContainer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiStage(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiStatusbar(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiStatusPane(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTab(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTableControl(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTabStrip(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTextedit(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTextField(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTitlebar(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiToolbar(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiTree(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiUserArea(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiVComponent(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiVContainer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            SAPComponent::GuiVHViewSwitch(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
+                            _ => Err("No valid target to get type.".to_string()),
+                        } {
+                            Ok(kind) => { output.insert("type".to_string(), ParameterValue::String(kind)); }
+                            Err(reason) => return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            }),
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: format!("Couldn't find {target}."),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+
+            None
+        })
+    .with_instruction(
+        Instruction::new(
+            "sap-visualise-element",
+            "Highlight Element",
+            "Highlight an element by drawing a red box around it. Useful just before screenshotting."
+        )
+        .with_parameter("target", "Target", ParameterKind::String),
+        |state, params, _output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let target = params["target"].value_string();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(target.clone()) {
+                        if let Err(reason) = match comp {
+                            SAPComponent::GuiBarChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiButton(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCalendar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCheckBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiColorSelector(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiComboBox(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiComboBoxControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiContainerShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCTextField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiCustomControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiDialogShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiEAIViewer2D(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiEAIViewer3D(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiFrameWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGOSShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGraphAdapt(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiGridView(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiHTMLViewer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiInputFieldControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiLabel(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMainWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMap(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMenu(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiMenubar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiModalWindow(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiNetChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiOfficeIntegration(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiOkCodeField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiPasswordField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiPicture(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiRadioButton(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSapChart(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiScrollContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiShell(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSimpleContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSplit(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiSplitterContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStage(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStatusbar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiStatusPane(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTab(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTableControl(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTabStrip(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTextedit(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTextField(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTitlebar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiToolbar(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiTree(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiUserArea(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVComponent(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVContainer(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            SAPComponent::GuiVHViewSwitch(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
+                            _ => Err("No valid target to visualise.".to_string()),
+                        } {
+                            return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: format!("Couldn't find {target}."),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+
+            None
+        })
+    .with_instruction(
+        Instruction::new(
             "sap-set-text-value",
             "Text Value: Set",
             "Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
@@ -663,6 +851,204 @@ lazy_static! {
                             _ => Err(String::from("The tab was invalid")),
                         } {
                             return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: String::from("Failed to find tab"),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+            None
+        })
+    .with_instruction(
+        Instruction::new(
+            "sap-table-get-row-count",
+            "Table: Get Row Count",
+            "Get the number of rows in a table.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_output("rows", "Rows", ParameterKind::Integer),
+        |state, params, output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let id = params["target"].value_string();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(id) {
+                        match match comp {
+                            SAPComponent::GuiTableControl(tab) => tab.row_count().map_err(|e| format!("Cannot read number of rows: {e}")),
+                            _ => Err(String::from("The table was invalid")),
+                        } {
+                            Ok(num_rows) => { output.insert("rows".to_string(), ParameterValue::Integer(num_rows)); },
+                            Err(reason) => return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: String::from("Failed to find table"),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+            None
+        })
+    .with_instruction(
+        Instruction::new(
+            "sap-table-row-select",
+            "Table: Row: Select",
+            "Select a row in a table.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_parameter("row", "Row", ParameterKind::Integer),
+        |state, params, _output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let id = params["target"].value_string();
+            let row = params["row"].value_i32();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(id) {
+                        match match comp {
+                            SAPComponent::GuiTableControl(tab) => tab.get_absolute_row(row).map_err(|e| format!("Failed to get table row: {e}")),
+                            _ => Err(String::from("The table was invalid")),
+                        } {
+                            Ok(row_comp) => if let Err(e) = row_comp.set_selected(true) {
+                                return Some(Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason: format!("Failed to select row: {e}"),
+                                })
+                            },
+                            Err(reason) => return Some(Response::Error {
+                                kind: ErrorKind::EngineProcessingError,
+                                reason,
+                            })
+                        }
+                    } else {
+                        return Some(Response::Error {
+                            kind: ErrorKind::EngineProcessingError,
+                            reason: String::from("Failed to find tab"),
+                        })
+                    }
+                }
+                Err(e) => {
+                    return Some(Response::Error {
+                        kind: ErrorKind::EngineProcessingError,
+                        reason: e,
+                    })
+                }
+            }
+            None
+        })
+    .with_instruction(
+        Instruction::new(
+            "sap-table-cell-get-id",
+            "Table: Get ID of Cell",
+            "Get the ID of a cell that can be fed into another function's 'Target' parameter.",
+        )
+        .with_parameter("target", "Target", ParameterKind::String)
+        .with_parameter("row", "Row", ParameterKind::Integer)
+        .with_parameter("column", "Column", ParameterKind::Integer)
+        .with_output("id", "Target ID", ParameterKind::String),
+        |state, params, output, _evidence| {
+            let state = state.get_mut().expect("state must be lockable");
+            let id = params["target"].value_string();
+            let row = params["row"].value_i32();
+            let col = params["column"].value_i32();
+
+            match get_session(state) {
+                Ok(session) => {
+                    if let Ok(comp) = session.find_by_id(id) {
+                        match match comp {
+                            SAPComponent::GuiTableControl(tab) => tab.get_cell(row, col).map_err(|e| format!("Failed to get table cell: {e}")),
+                            _ => Err(String::from("The table was invalid")),
+                        } {
+                            Ok(comp) => match match comp {
+                                SAPComponent::GuiApplication(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiBarChart(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiBox(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiButton(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiCalendar(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiChart(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiCheckBox(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiColorSelector(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiComboBox(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiComboBoxControl(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiComponent(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiContainerShell(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiCTextField(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiCustomControl(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiDialogShell(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiEAIViewer2D(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiEAIViewer3D(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiFrameWindow(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiGOSShell(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiGraphAdapt(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiGridView(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiHTMLViewer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiInputFieldControl(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiLabel(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiMainWindow(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiMap(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiMenu(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiMenubar(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiModalWindow(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiNetChart(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiOfficeIntegration(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiOkCodeField(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiPasswordField(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiPicture(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiRadioButton(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiSapChart(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiScrollContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiShell(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiSimpleContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiSplit(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiSplitterContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiStage(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiStatusbar(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiStatusPane(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTab(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTableControl(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTabStrip(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTextedit(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTextField(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTitlebar(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiToolbar(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiTree(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiUserArea(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiVComponent(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiVContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                SAPComponent::GuiVHViewSwitch(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
+                                _ => Err("Invalid component to get ID.".to_string()),
+                            } {
+                                Ok(id) => { output.insert("id".to_string(), ParameterValue::String(id)); }
+                                Err(reason) => return Some(Response::Error {
+                                    kind: ErrorKind::EngineProcessingError,
+                                    reason,
+                                })
+                            },
+                            Err(reason) => return Some(Response::Error {
                                 kind: ErrorKind::EngineProcessingError,
                                 reason,
                             })
