@@ -4,25 +4,26 @@ version = 3
 
 [[package]]
 name = "base64"
-version = "0.21.3"
+version = "0.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "414dcefbc63d77c526a76b3afcf6fbb9b5e2791c19c3aa2297733208750c6e53"
+checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
 
 [[package]]
 name = "com-shim"
-version = "0.3.3"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d41a8a89cc987776a65a349cd4a2ab168b195bdba330e879d9b8c9ca49a9bb97"
+checksum = "9d37d2ef4e9a41f2f53f881b394f0d7d9ecda49a99b75e9881f88318b0a67cab"
 dependencies = [
  "com-shim-macro",
- "windows",
+ "log",
+ "windows 0.51.1",
 ]
 
 [[package]]
 name = "com-shim-macro"
-version = "0.3.3"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06dd716285afaf9d5514c631c755d4e5fc1268a495d72117bf5f4f6a47014575"
+checksum = "4a147e680fe095ccb3031b3ddf1dbf47ddf77a03d81fed0215d2a541f673c834"
 dependencies = [
  "heck",
 ]
@@ -53,9 +54,9 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.66"
+version = "1.0.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+checksum = "3d433d9f1a3e8c1263d9456598b16fec66f4acc9a74dacffd35c7bb09b3a1328"
 dependencies = [
  "unicode-ident",
 ]
@@ -77,13 +78,13 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "sap-scripting"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2ae05b5c3189c7ad0c5abf08d1df5eb3c1879b0b6833d9eff8acec3bbc9b253"
+checksum = "c3b4569fabf314a07fb298e4b06ef6b9131e2debb6f9e046bfff312d35835dd7"
 dependencies = [
  "com-shim",
  "log",
- "windows",
+ "windows 0.48.0",
 ]
 
 [[package]]
@@ -108,9 +109,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.105"
+version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "693151e1ac27563d6dbcec9dee9fbd5da8539b20fa14ad3752b2e6d363ace360"
+checksum = "6b420ce6e3d8bd882e9b243c6eed35dbc9a6110c9769e74b584e0d68d1f20c65"
 dependencies = [
  "itoa",
  "ryu",
@@ -119,9 +120,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.29"
+version = "2.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c324c494eba9d92503e6f1ef2e6df781e78f6a7705a0202d9801b198807d518a"
+checksum = "7303ef2c05cd654186cb250d29049a24840ca25d2747c25c0381c8d9e2f582e8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -130,8 +131,8 @@ dependencies = [
 
 [[package]]
 name = "testangel-engine"
-version = "0.13.0"
-source = "git+https://github.com/lilopkins/testangel.git#41319f485e1f3b2b0abd9a0a53181b38b07a4052"
+version = "0.15.0"
+source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
 dependencies = [
  "testangel-engine-macros",
  "testangel-ipc",
@@ -139,13 +140,13 @@ dependencies = [
 
 [[package]]
 name = "testangel-engine-macros"
-version = "0.13.0"
-source = "git+https://github.com/lilopkins/testangel.git#41319f485e1f3b2b0abd9a0a53181b38b07a4052"
+version = "0.15.0"
+source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
 
 [[package]]
 name = "testangel-ipc"
-version = "0.13.0"
-source = "git+https://github.com/lilopkins/testangel.git#41319f485e1f3b2b0abd9a0a53181b38b07a4052"
+version = "0.15.0"
+source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
 dependencies = [
  "serde",
  "serde_json",
@@ -153,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "base64",
  "lazy_static",
@@ -163,15 +164,34 @@ dependencies = [
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
+checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "windows"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e686886bc078bc1b0b600cac0147aadb815089b6e4da64016cbd754b6342700f"
+dependencies = [
+ "windows-targets",
+]
+
+[[package]]
+name = "windows"
+version = "0.51.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca229916c5ee38c2f2bc1e9d8f04df975b4bd93f9955dc69fabb5d91270045c9"
+dependencies = [
+ "windows-core",
+ "windows-targets",
+]
+
+[[package]]
+name = "windows-core"
+version = "0.51.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1f8cf84f35d2db49a46868f947758c7a1138116f7fac3bc844f43ade1292e64"
 dependencies = [
  "windows-targets",
 ]
