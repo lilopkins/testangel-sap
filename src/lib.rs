@@ -12,7 +12,7 @@ struct State {
 unsafe impl Send for State {}
 
 lazy_static! {
-    static ref ENGINE: Mutex<Engine<'static, Mutex<State>>> = Mutex::new(Engine::new("SAP")
+    static ref ENGINE: Mutex<Engine<'static, Mutex<State>>> = Mutex::new(Engine::new("SAP", env!("CARGO_PKG_VERSION"))
     .with_instruction(
         Instruction::new(
             "sap-connect",
