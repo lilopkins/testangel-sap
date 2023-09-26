@@ -10,13 +10,13 @@ checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
 
 [[package]]
 name = "com-shim"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d37d2ef4e9a41f2f53f881b394f0d7d9ecda49a99b75e9881f88318b0a67cab"
+checksum = "bd014a4a19297b161b0c59d7304fa7e02231634e623891b8b4cec1a4bcbc31ad"
 dependencies = [
  "com-shim-macro",
  "log",
- "windows 0.51.1",
+ "windows",
 ]
 
 [[package]]
@@ -78,13 +78,13 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "sap-scripting"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3b4569fabf314a07fb298e4b06ef6b9131e2debb6f9e046bfff312d35835dd7"
+checksum = "59c693b4e94b40d1cd54e20902acda0999a98dc7e63a7878a35feb359073e6c0"
 dependencies = [
  "com-shim",
  "log",
- "windows 0.48.0",
+ "windows",
 ]
 
 [[package]]
@@ -154,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "base64",
  "lazy_static",
@@ -167,15 +167,6 @@ name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
-
-[[package]]
-name = "windows"
-version = "0.48.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e686886bc078bc1b0b600cac0147aadb815089b6e4da64016cbd754b6342700f"
-dependencies = [
- "windows-targets",
-]
 
 [[package]]
 name = "windows"
