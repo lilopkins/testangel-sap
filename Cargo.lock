@@ -21,9 +21,9 @@ dependencies = [
 
 [[package]]
 name = "com-shim-macro"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a147e680fe095ccb3031b3ddf1dbf47ddf77a03d81fed0215d2a541f673c834"
+checksum = "15bd27ae69091665f918f1bed957fc4e80c11a024dd02732d6e8ea7038bc44dd"
 dependencies = [
  "heck",
 ]
@@ -131,8 +131,8 @@ dependencies = [
 
 [[package]]
 name = "testangel-engine"
-version = "0.15.0"
-source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
+version = "0.15.2"
+source = "git+https://github.com/lilopkins/testangel.git#5fd906fa2b5ae2ede5f4307fe54d50235d8e505e"
 dependencies = [
  "testangel-engine-macros",
  "testangel-ipc",
@@ -140,13 +140,13 @@ dependencies = [
 
 [[package]]
 name = "testangel-engine-macros"
-version = "0.15.0"
-source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
+version = "0.15.2"
+source = "git+https://github.com/lilopkins/testangel.git#5fd906fa2b5ae2ede5f4307fe54d50235d8e505e"
 
 [[package]]
 name = "testangel-ipc"
-version = "0.15.0"
-source = "git+https://github.com/lilopkins/testangel.git#d622f0361a6dc036834f27640c0412a64ff0b618"
+version = "0.15.2"
+source = "git+https://github.com/lilopkins/testangel.git#5fd906fa2b5ae2ede5f4307fe54d50235d8e505e"
 dependencies = [
  "serde",
  "serde_json",
