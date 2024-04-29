@@ -12,10 +12,11 @@ struct State {
 unsafe impl Send for State {}
 
 lazy_static! {
-    static ref ENGINE: Mutex<Engine<'static, Mutex<State>>> = Mutex::new(Engine::new("SAP", env!("CARGO_PKG_VERSION"))
+    static ref ENGINE: Mutex<Engine<'static, Mutex<State>>> = Mutex::new(Engine::new("SAP", "SAP", env!("CARGO_PKG_VERSION"))
     .with_instruction(
         Instruction::new(
             "sap-connect",
+            "Connect",
             "Connect to Open Instance",
             "Connect to an SAP instance that the user already has open.\nIf they have multiple open, this will give access to any of the open windows (although most instructions use the main window).\nThis will do nothing if we already hold a connection.",
         ),
@@ -31,6 +32,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-run-transaction",
+            "RunTransaction",
             "Run Transaction",
             "Run a transaction.",
         )
@@ -47,6 +49,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-screenshot",
+            "ScreenshotAsEvidence",
             "Screenshot as Evidence",
             "Take a screenshot of a SAP window"
         )
@@ -83,6 +86,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-does-element-exist",
+            "DoesElementExist",
             "Does Element Exist",
             "Check if an element exists and returns a boolean.",
         )
@@ -100,6 +104,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-component-type",
+            "ComponentType",
             "Component Type",
             "Return the type string of the component."
         )
@@ -175,6 +180,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-visualise-element",
+            "HighlightElement",
             "Highlight Element",
             "Highlight an element by drawing a red box around it. Useful just before screenshotting."
         )
@@ -248,6 +254,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-set-text-value",
+            "SetTextValue",
             "Text Value: Set",
             "Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
         )
@@ -275,6 +282,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-get-text-value",
+            "GetTextValue",
             "Text Value: Get",
             "Get the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
         )
@@ -308,6 +316,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-send-key",
+            "SendKey",
             "Send Key",
             "Send a keypress to the SAP system.",
         )
@@ -331,6 +340,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-press-button",
+            "PressButton",
             "Press UI Button",
             "Press a button in the UI.",
         )
@@ -353,6 +363,7 @@ lazy_static! {
         .with_instruction(
             Instruction::new(
                 "sap-set-checkbox",
+                "SetCheckbox",
                 "Checkbox: Set Value",
                 "Set the state of a checkbox in the UI.",
             )
@@ -377,6 +388,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-set-combobox-key",
+            "SetComboBoxKey",
             "Combo Box: Set Key",
             "Set the key (selected item) of the combo box.",
         )
@@ -401,6 +413,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-grid-get-row-count",
+            "GetGridRowCount",
             "Grid: Get Row Count",
             "Get the number of rows in a grid.",
         )
@@ -433,6 +446,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-grid-click-cell",
+            "ClickGridCell",
             "Grid: Click or Double Click Cell",
             "Click or double click a cell.",
         )
@@ -471,6 +485,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-grid-get-cell-value",
+            "GetGridCellValue",
             "Grid: Get Cell Value",
             "Get the value of a grid cell.",
         )
@@ -507,6 +522,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-get-statusbar-state",
+            "GetStatusBarState",
             "Status Bar: Get State",
             "Get the type of message displayed in the status bar shown at the bottom of the SAP window. This could be 'S' (Success), 'W' (Warning), 'E' (Error), 'A' (Abort), 'I' (Information) or '' (No Status).",
         )
@@ -538,6 +554,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-tab-select",
+            "SelectTab",
             "Tab: Select",
             "Select a tab in a tab panel.",
         )
@@ -560,6 +577,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-table-get-row-count",
+            "GetTableRowCount",
             "Table: Get Row Count",
             "Get the number of rows in a table.",
         )
@@ -582,6 +600,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-table-row-select",
+            "SelectTableRow",
             "Table: Row: Select",
             "Select a row in a table.",
         )
@@ -605,6 +624,7 @@ lazy_static! {
     .with_instruction(
         Instruction::new(
             "sap-table-cell-get-id",
+            "GetIDOfTableCell",
             "Table: Get ID of Cell",
             "Get the ID of a cell that can be fed into another function's 'Target' parameter.",
         )
