@@ -1,64 +1,70 @@
-use std::{fs, sync::Mutex};
+#![warn(clippy::pedantic)]
 
-use lazy_static::lazy_static;
-use sap_scripting::*;
-use testangel_engine::*;
+use std::fs;
 
-#[derive(Default)]
-struct State {
-    com_instance: Option<SAPComInstance>,
-    session: Option<GuiSession>,
-}
-unsafe impl Send for State {}
+use sap_scripting::{
+    GuiButton_Impl, GuiCheckBox_Impl, GuiComboBox_Impl, GuiComponentCollection_Impl,
+    GuiComponent_Impl, GuiContainer_Impl, GuiFrameWindow_Impl, GuiGridView_Impl, GuiSession,
+    GuiSession_Impl, GuiStatusbar_Impl, GuiTab_Impl, GuiTableControl_Impl, GuiTableRow_Impl,
+    GuiVComponent_Impl, SAPComInstance, SAPComponent,
+};
+use testangel_engine::{engine, Evidence, EvidenceContent};
 
-lazy_static! {
-    static ref ENGINE: Mutex<Engine<'static, Mutex<State>>> = Mutex::new(Engine::new("SAP", "SAP", env!("CARGO_PKG_VERSION"))
-    .with_instruction(
-        Instruction::new(
-            "sap-connect",
-            "Connect",
-            "Connect to Open Instance",
-            "Connect to an SAP instance that the user already has open.\nIf they have multiple open, this will give access to any of the open windows (although most instructions use the main window).\nThis will do nothing if we already hold a connection.",
-        ),
-        |state: &mut Mutex<State>, _params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
+engine! {
+    /// Work with SAP
+    #[engine(
+        version = env!("CARGO_PKG_VERSION"),
+    )]
+    #[derive(Default)]
+    #[allow(clippy::upper_case_acronyms)]
+    struct SAP {
+        com_instance: Option<SAPComInstance>,
+        session: Option<GuiSession>,
+    }
 
-            if state.com_instance.is_none() {
+    impl SAP {
+        /// Connect to an SAP instance that the user already has open. If they
+        /// have multiple open, this will give access to any of the open windows
+        /// (although most instructions use the main window). This will do
+        /// nothing if we already hold a connection.
+        #[instruction(
+            id = "sap-connect",
+            name = "Connect",
+            lua_name = "Connect to Open Instance",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn connect() {
+            if state.com_instance.is_none() && !dry_run {
                 connect(state)?;
             }
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-run-transaction",
-            "RunTransaction",
-            "Run Transaction",
-            "Run a transaction.",
-        )
-        .with_parameter("tcode", "Transaction Code", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let tcode = params["tcode"].value_string();
-
+        /// Run a transaction.
+        #[instruction(
+            id = "sap-run-transaction",
+            name = "RunTransaction",
+            lua_name = "Run Transaction",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn run_transaction(
+            #[arg(name = "Transaction Code")] tcode: String,
+        ) {
             let session = get_session(state)?;
             session.start_transaction(tcode.clone()).map_err(|e| format!("Couldn't execute transaction. {e}"))?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-screenshot",
-            "ScreenshotAsEvidence",
-            "Screenshot as Evidence",
-            "Take a screenshot of a SAP window"
-        )
-        .with_parameter("label", "Evidence Label", ParameterKind::String)
-        .with_parameter("target", "Target (usually 'wnd[0]')", ParameterKind::String),
-        |state, params, _output, evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let label = params["label"].value_string();
-            let target = params["target"].value_string();
+        /// Take a screenshot of a SAP window
+        #[instruction(
+            id = "sap-screenshot",
+            name = "ScreenshotAsEvidence",
+            lua_name = "Screenshot as Evidence",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn screenshot(
+            #[arg(name = "Evidence Label")] label: String,
+            #[arg(name = "Target (usually 'wnd[0]')")] target: String,
+        ) {
+            use base64::{Engine as _, engine::general_purpose};
 
             let session = get_session(state)?;
             let wnd = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
@@ -74,49 +80,40 @@ lazy_static! {
             // Read path, add to evidence, delete file
             let data = fs::read(&path).map_err(|e| format!("Failed to read screenshot: {e}"))?;
 
-            use base64::{Engine as _, engine::general_purpose};
             let b64_data = general_purpose::STANDARD.encode(data);
             evidence.push(Evidence { label, content: EvidenceContent::ImageAsPngBase64(b64_data) });
 
             // try to delete, but don't worry if we can't
             let _ = fs::remove_file(path);
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-does-element-exist",
-            "DoesElementExist",
-            "Does Element Exist",
-            "Check if an element exists and returns a boolean.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_output("exists", "Exists", ParameterKind::Boolean),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-
+        /// Check if an element exists and returns a boolean.
+        #[instruction(
+            id = "sap-does-element-exist",
+            name = "DoesElementExist",
+            lua_name = "Does Element Exist",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn does_element_exist(
+            target: String,
+        ) -> #[output(id = "exists", name = "Exists")] bool {
             let session = get_session(state)?;
-            output.insert("exists".to_string(), ParameterValue::Boolean(session.find_by_id(target.clone()).is_ok()));
+            session.find_by_id(target.clone()).is_ok()
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-component-type",
-            "ComponentType",
-            "Component Type",
-            "Return the type string of the component."
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_output("type", "Type", ParameterKind::String),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-
+        /// Return the type string of the component.
+        #[instruction(
+            id = "sap-component-type",
+            name = "ComponentType",
+            lua_name = "Component Type",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn component_type(
+            target: String,
+        ) -> #[output(id = "type", name = "Type")] String {
             let session = get_session(state)?;
             let comp = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
-            let kind = match comp {
+            match comp {
                 SAPComponent::GuiBarChart(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
                 SAPComponent::GuiBox(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
                 SAPComponent::GuiButton(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
@@ -172,23 +169,19 @@ lazy_static! {
                 SAPComponent::GuiVContainer(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
                 SAPComponent::GuiVHViewSwitch(comp) => comp._type().map_err(|e| format!("Failed to get type: {e}")),
                 _ => Err("No valid target to get type.".to_string()),
-            }?;
-            output.insert("type".to_string(), ParameterValue::String(kind));
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-visualise-element",
-            "HighlightElement",
-            "Highlight Element",
-            "Highlight an element by drawing a red box around it. Useful just before screenshotting."
-        )
-        .with_parameter("target", "Target", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-
+        /// Highlight an element by drawing a red box around it. Useful just before screenshotting.
+        #[instruction(
+            id = "sap-visualise-element",
+            name = "HighlightElement",
+            lua_name = "Highlight Element",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn visualise_element(
+            target: String,
+        ) {
             let session = get_session(state)?;
             let comp = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
             match comp {
@@ -248,23 +241,19 @@ lazy_static! {
                 SAPComponent::GuiVHViewSwitch(comp) => comp.visualize(true).map_err(|e| format!("Failed to visualize: {e}")),
                 _ => Err("No valid target to visualise.".to_string()),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-set-text-value",
-            "SetTextValue",
-            "Text Value: Set",
-            "Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_parameter("value", "Value", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-            let value = params["value"].value_string();
-
+        /// Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.
+        #[instruction(
+            id = "sap-set-text-value",
+            name = "SetTextValue",
+            lua_name = "Text Value: Set",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn set_text_value(
+            target: String,
+            value: String,
+        ) {
             let session = get_session(state)?;
             let wnd = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
             match wnd {
@@ -276,25 +265,21 @@ lazy_static! {
                     .map_err(|e| format!("Can't set text: {e}")),
                 _ => Err("No valid target to set text.".to_string()),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-get-text-value",
-            "GetTextValue",
-            "Text Value: Get",
-            "Get the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_output("value", "Value", ParameterKind::String),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-
+        /// Get the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.
+        #[instruction(
+            id = "sap-get-text-value",
+            name = "GetTextValue",
+            lua_name = "Text Value: Get",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn get_text_value(
+            target: String,
+        ) -> #[output(id = "value", name = "Value")] String {
             let session = get_session(state)?;
             let wnd = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
-            let text = match wnd {
+            match wnd {
                 SAPComponent::GuiTextField(txt) => {
                     txt.text().map_err(|e| format!("Can't get text: {e}"))
                 }
@@ -308,97 +293,81 @@ lazy_static! {
                     txt.text().map_err(|e| format!("Can't get text: {e}"))
                 }
                 _ => Err("No valid target to get text.".to_string()),
-            }?;
-            output.insert("value".to_string(), ParameterValue::String(text));
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-send-key",
-            "SendKey",
-            "Send Key",
-            "Send a keypress to the SAP system.",
-        )
-        .with_parameter("key", "Key (VKey)", ParameterKind::Integer),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-
-            let key = params["key"].value_i32();
-
+        /// Send a keypress to the SAP system.
+        #[instruction(
+            id = "sap-send-key",
+            name = "SendKey",
+            lua_name = "Send Key",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn send_key(
+            #[arg(name = "Key (VKey)")] key: i32,
+        ) {
             let session = get_session(state)?;
             let wnd = session.find_by_id("wnd[0]".to_owned()).map_err(|_| String::from("SAP window couldn't be requested."))?;
             match wnd {
                 SAPComponent::GuiMainWindow(wnd) => wnd
-                    .send_v_key(key as i16)
+                    .send_v_key(i16::try_from(key)?)
                     .map_err(|e| format!("Couldn't send VKey: {e}")),
                 _ => Err(String::from("SAP window not open")),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-press-button",
-            "PressButton",
-            "Press UI Button",
-            "Press a button in the UI.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-
+        /// Press a button in the UI.
+        #[instruction(
+            id = "sap-press-button",
+            name = "PressButton",
+            lua_name = "Press UI Button",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn press_button(
+            target: String,
+        ) {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find component"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find component"))?;
             match comp {
                 SAPComponent::GuiButton(b) => {
                     b.press().map_err(|e| format!("Couldn't press button: {e}"))
                 }
                 _ => Err(String::from("Tried to press a non-button")),
             }?;
+        }
 
-            Ok(())
-        })
-        .with_instruction(
-            Instruction::new(
-                "sap-set-checkbox",
-                "SetCheckbox",
-                "Checkbox: Set Value",
-                "Set the state of a checkbox in the UI.",
-            )
-            .with_parameter("target", "Target", ParameterKind::String)
-            .with_parameter("state", "Checked", ParameterKind::Boolean),
-            |state, params, _output, _evidence| {
-                let state = state.get_mut().expect("state must be lockable");
-                let id = params["target"].value_string();
-                let cb_state = params["state"].value_bool();
+        /// Set the state of a checkbox in the UI.
+        #[instruction(
+            id = "sap-set-checkbox",
+            name = "SetCheckbox",
+            lua_name = "Checkbox: Set Value",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn set_checkbox(
+            target: String,
+            #[arg(id = "state", name = "Checked")] cb_state: bool,
+        ) {
+            let session = get_session(state)?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find component"))?;
+            match comp {
+                SAPComponent::GuiCheckBox(c) => c
+                    .set_selected(cb_state)
+                    .map_err(|e| format!("Couldn't set checkbox: {e}")),
+                _ => Err(String::from("Tried to check a non-checkbox")),
+            }?;
+        }
 
-                let session = get_session(state)?;
-                let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find component"))?;
-                match comp {
-                    SAPComponent::GuiCheckBox(c) => c
-                        .set_selected(cb_state)
-                        .map_err(|e| format!("Couldn't set checkbox: {e}")),
-                    _ => Err(String::from("Tried to check a non-checkbox")),
-                }?;
-
-                Ok(())
-            })
-    .with_instruction(
-        Instruction::new(
-            "sap-set-combobox-key",
-            "SetComboBoxKey",
-            "Combo Box: Set Key",
-            "Set the key (selected item) of the combo box.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_parameter("key", "Key", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let target = params["target"].value_string();
-            let key = params["key"].value_string();
-
+        /// Set the key (selected item) of the combo box.
+        #[instruction(
+            id = "sap-set-combobox-key",
+            name = "SetComboBoxKey",
+            lua_name = "Combo Box: Set Key",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn set_combobox_key(
+            target: String,
+            key: String,
+        ) {
             let session = get_session(state)?;
             let wnd = session.find_by_id(target.clone()).map_err(|_| format!("Couldn't find {target}."))?;
             match wnd {
@@ -407,62 +376,48 @@ lazy_static! {
                     .map_err(|e| format!("Can't set combo box key: {e}")),
                 _ => Err("No valid target to set combo box key.".to_string()),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-grid-get-row-count",
-            "GetGridRowCount",
-            "Grid: Get Row Count",
-            "Get the number of rows in a grid.",
-        )
-        .with_parameter("target", "Target Grid", ParameterKind::String)
-        .with_output("value", "Number of rows", ParameterKind::Integer),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-
+        /// Get the number of rows in a grid.
+        #[instruction(
+            id = "sap-grid-get-row-count",
+            name = "GetGridRowCount",
+            lua_name = "Grid: Get Row Count",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn grid_get_row_count(
+            #[arg(name = "Target Grid")] target: String,
+        ) -> #[output(id = "value", name = "Number of rows")] i32 {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find grid"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
             match comp {
                 SAPComponent::GuiGridView(g) => {
                     if let Ok(row_count) = g.row_count() {
                         // ! This might drop some precision in some situations!
-                        output.insert(
-                            "value".to_string(),
-                            ParameterValue::Integer(row_count),
-                        );
-                        Ok(())
+                        Ok(row_count)
                     } else {
                         Err(String::from("The grid had no row count."))
                     }
                 }
                 _ => Err(String::from("The grid was invalid")),
-            }?;
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-grid-click-cell",
-            "ClickGridCell",
-            "Grid: Click or Double Click Cell",
-            "Click or double click a cell.",
-        )
-        .with_parameter("target", "Target Grid", ParameterKind::String)
-        .with_parameter("row", "Row", ParameterKind::Integer)
-        .with_parameter("col", "Column", ParameterKind::String)
-        .with_parameter("double", "Double click", ParameterKind::Boolean),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-            let row = params["row"].value_i32();
-            let col = params["col"].value_string();
-            let double = params["double"].value_bool();
-
+        /// Click or double click a cell.
+        #[instruction(
+            id = "sap-grid-click-cell",
+            name = "ClickGridCell",
+            lua_name = "Grid: Click or Double Click Cell",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn grid_click_cell(
+            #[arg(name = "Target Grid")] target: String,
+            row: i32,
+            #[arg(name = "Column")] col: String,
+            #[arg(name = "Double click")] double: bool,
+        ) {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find grid"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
             match comp {
                 SAPComponent::GuiGridView(g) => {
                     g.set_current_cell(row, col).map_err(|e| format!("Couldn't select cell in grid: {e}"))?;
@@ -479,172 +434,136 @@ lazy_static! {
                 }
                 _ => Err(String::from("The grid was invalid.")),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-grid-get-cell-value",
-            "GetGridCellValue",
-            "Grid: Get Cell Value",
-            "Get the value of a grid cell.",
-        )
-        .with_parameter("target", "Target Grid", ParameterKind::String)
-        .with_parameter("row", "Row", ParameterKind::Integer)
-        .with_parameter("col", "Column", ParameterKind::String)
-        .with_output("value", "Value", ParameterKind::String),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-            let row = params["row"].value_i32();
-            let col = params["col"].value_string();
-
+        /// Get the value of a grid cell.
+        #[instruction(
+            id = "sap-grid-get-cell-value",
+            name = "GetGridCellValue",
+            lua_name = "Grid: Get Cell Value",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn grid_get_cell_value(
+            #[arg(name = "Target Grid")] target: String,
+            row: i32,
+            #[arg(name = "Column")] col: String,
+        ) -> #[output(id = "value", name = "Value")] String {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find grid view"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid view"))?;
             match comp {
                 SAPComponent::GuiGridView(g) => {
                     match g.get_cell_value(row, col) {
                         Ok(value) => {
-                            output.insert(
-                                "value".to_string(),
-                                ParameterValue::String(value),
-                            );
-                            Ok(())
+                            Ok(value)
                         }
                         Err(e) => Err(format!("The value couldn't be read: {e}")),
                     }
                 }
                 _ => Err(String::from("The grid view was invalid")),
-            }?;
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-get-statusbar-state",
-            "GetStatusBarState",
-            "Status Bar: Get State",
-            "Get the type of message displayed in the status bar shown at the bottom of the SAP window. This could be 'S' (Success), 'W' (Warning), 'E' (Error), 'A' (Abort), 'I' (Information) or '' (No Status).",
-        )
-        .with_parameter("target", "Target (usually 'wnd[0]/sbar')", ParameterKind::String)
-        .with_output("status", "Status", ParameterKind::String),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-
+        /// Get the type of message displayed in the status bar shown at the bottom of the SAP window. This could be 'S' (Success), 'W' (Warning), 'E' (Error), 'A' (Abort), 'I' (Information) or '' (No Status).
+        #[instruction(
+            id = "sap-get-statusbar-state",
+            name = "GetStatusBarState",
+            lua_name = "Status Bar: Get State",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn get_statusbar_state(
+            #[arg(name = "Target (usually 'wnd[0]/sbar')")] target: String,
+        ) -> #[output(id = "status", name = "Status")] String {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find status bar"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find status bar"))?;
             match comp {
                 SAPComponent::GuiStatusbar(s) => {
                     if let Ok(status) = s.message_type() {
-                        output.insert(
-                            "status".to_string(),
-                            ParameterValue::String(status),
-                        );
-                        Ok(())
+                        Ok(status)
                     } else {
                         Err(String::from("The statusbar had no message type."))
                     }
                 }
                 _ => Err(String::from("The statusbar was invalid")),
-            }?;
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-tab-select",
-            "SelectTab",
-            "Tab: Select",
-            "Select a tab in a tab panel.",
-        )
-        .with_parameter("target", "Target Tab", ParameterKind::String),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-
+        /// Select a tab in a tab panel.
+        #[instruction(
+            id = "sap-tab-select",
+            name = "SelectTab",
+            lua_name = "Tab: Select",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn tab_select(
+            #[arg(name = "Target Tab")] target: String,
+        ) {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find tab"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find tab"))?;
             match comp {
                 SAPComponent::GuiTab(g) => g.select().map_err(|_| {
                     String::from("The tab couldn't be selected.")
                 }),
                 _ => Err(String::from("The tab was invalid")),
             }?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-table-get-row-count",
-            "GetTableRowCount",
-            "Table: Get Row Count",
-            "Get the number of rows in a table.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_output("rows", "Rows", ParameterKind::Integer),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-
+        /// Get the number of rows in a table.
+        #[instruction(
+            id = "sap-table-get-row-count",
+            name = "GetTableRowCount",
+            lua_name = "Table: Get Row Count",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn table_get_row_count(
+            target: String,
+        ) -> #[output(id = "rows", name = "Rows")] i32 {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find table"))?;
-            let num_rows = match comp {
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find table"))?;
+            match comp {
                 SAPComponent::GuiTableControl(tab) => tab.row_count().map_err(|e| format!("Cannot read number of rows: {e}")),
                 _ => Err(String::from("The table was invalid")),
-            }?;
-            output.insert("rows".to_string(), ParameterValue::Integer(num_rows));
+            }?
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-table-row-select",
-            "SelectTableRow",
-            "Table: Row: Select",
-            "Select a row in a table.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_parameter("row", "Row", ParameterKind::Integer),
-        |state, params, _output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-            let row = params["row"].value_i32();
-
+        /// Select a row in a table.
+        #[instruction(
+            id = "sap-table-row-select",
+            name = "SelectTableRow",
+            lua_name = "Table: Row: Select",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn table_row_select(
+            target: String,
+            row: i32,
+        ) {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find tab"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find tab"))?;
             let row_comp = match comp {
                 SAPComponent::GuiTableControl(tab) => tab.get_absolute_row(row).map_err(|e| format!("Failed to get table row: {e}")),
                 _ => Err(String::from("The table was invalid")),
             }?;
             row_comp.set_selected(true).map_err(|e| format!("Failed to select row: {e}"))?;
+        }
 
-            Ok(())
-        })
-    .with_instruction(
-        Instruction::new(
-            "sap-table-cell-get-id",
-            "GetIDOfTableCell",
-            "Table: Get ID of Cell",
-            "Get the ID of a cell that can be fed into another function's 'Target' parameter.",
-        )
-        .with_parameter("target", "Target", ParameterKind::String)
-        .with_parameter("row", "Row", ParameterKind::Integer)
-        .with_parameter("column", "Column", ParameterKind::Integer)
-        .with_output("id", "Target ID", ParameterKind::String),
-        |state, params, output, _evidence| {
-            let state = state.get_mut().expect("state must be lockable");
-            let id = params["target"].value_string();
-            let row = params["row"].value_i32();
-            let col = params["column"].value_i32();
-
+        /// Get the ID of a cell that can be fed into another function's 'Target' parameter.
+        #[instruction(
+            id = "sap-table-cell-get-id",
+            name = "GetIDOfTableCell",
+            lua_name = "Table: Get ID of Cell",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn table_cell_get_id(
+            target: String,
+            row: i32,
+            column: i32,
+        ) -> #[output(id = "id", name = "Target ID")] String {
             let session = get_session(state)?;
-            let comp = session.find_by_id(id).map_err(|_| String::from("Failed to find tab"))?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find tab"))?;
             let comp = match comp {
-                SAPComponent::GuiTableControl(tab) => tab.get_cell(row, col).map_err(|e| format!("Failed to get table cell: {e}")),
+                SAPComponent::GuiTableControl(tab) => tab.get_cell(row, column).map_err(|e| format!("Failed to get table cell: {e}")),
                 _ => Err(String::from("The table was invalid")),
             }?;
-            let id = match comp {
+            match comp {
                 SAPComponent::GuiApplication(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
                 SAPComponent::GuiBarChart(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
                 SAPComponent::GuiBox(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
@@ -703,17 +622,15 @@ lazy_static! {
                 SAPComponent::GuiVContainer(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
                 SAPComponent::GuiVHViewSwitch(comp) => comp.id().map_err(|e| format!("Failed to get ID: {e}")),
                 _ => Err("Invalid component to get ID.".to_string()),
-            }?;
-            output.insert("id".to_string(), ParameterValue::String(id));
-
-            Ok(())
-        })
-    );
+            }?
+        }
+    }
 }
 
-expose_engine!(ENGINE);
+unsafe impl Send for SAP {}
+unsafe impl Sync for SAP {}
 
-fn connect(state: &mut State) -> std::result::Result<(), String> {
+fn connect(state: &mut SAP) -> std::result::Result<(), String> {
     let com_instance = SAPComInstance::new().map_err(|_| "Couldn't get COM instance")?;
     let wrapper = com_instance
         .sap_wrapper()
@@ -722,25 +639,23 @@ fn connect(state: &mut State) -> std::result::Result<(), String> {
         .scripting_engine()
         .map_err(|e| format!("Couldn't get GuiApplication instance: {e}"))?;
 
-    let connection = match sap_scripting::GuiApplication_Impl::children(&engine)
-        .map_err(|e| format!("Couldn't get GuiApplication children: {e}"))?
-        .element_at(0)
-        .map_err(|e| format!("Couldn't get child of GuiApplication: {e}"))?
-    {
-        SAPComponent::GuiConnection(conn) => conn,
-        _ => {
-            return Err(String::from(
-                "Expected GuiConnection, but got something else!",
-            ))
-        }
+    let SAPComponent::GuiConnection(connection) =
+        sap_scripting::GuiApplication_Impl::children(&engine)
+            .map_err(|e| format!("Couldn't get GuiApplication children: {e}"))?
+            .element_at(0)
+            .map_err(|e| format!("Couldn't get child of GuiApplication: {e}"))?
+    else {
+        return Err(String::from(
+            "Expected GuiConnection, but got something else!",
+        ));
     };
-    let session = match sap_scripting::GuiConnection_Impl::children(&connection)
-        .map_err(|e| format!("Couldn't get GuiConnection children: {e}"))?
-        .element_at(0)
-        .map_err(|e| format!("Couldn't get child of GuiConnection: {e}"))?
-    {
-        SAPComponent::GuiSession(session) => session,
-        _ => return Err(String::from("Expected GuiSession, but got something else!")),
+    let SAPComponent::GuiSession(session) =
+        sap_scripting::GuiConnection_Impl::children(&connection)
+            .map_err(|e| format!("Couldn't get GuiConnection children: {e}"))?
+            .element_at(0)
+            .map_err(|e| format!("Couldn't get child of GuiConnection: {e}"))?
+    else {
+        return Err(String::from("Expected GuiSession, but got something else!"));
     };
 
     state.com_instance = Some(com_instance);
@@ -749,7 +664,7 @@ fn connect(state: &mut State) -> std::result::Result<(), String> {
     Ok(())
 }
 
-fn get_session(state: &State) -> std::result::Result<&GuiSession, String> {
+fn get_session(state: &SAP) -> std::result::Result<&GuiSession, String> {
     state
         .session
         .as_ref()

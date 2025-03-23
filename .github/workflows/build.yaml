@@ -1,0 +1,97 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - main
+      - next
+
+env:
+  # Libraries always have `-` characters replaced by `_`!
+  ENGINE_NAME: testangel_sap
+  CARGO_EXTRA_ARGS: ""
+
+jobs:
+  vars:
+    name: Set variables
+    runs-on: ubuntu-latest
+    outputs:
+      executable-name: ${{ env.ENGINE_NAME }}
+    steps:
+      - name: Setup variables
+        run: exit 0
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    outputs:
+      CARGO_PKG_VERSION: ${{ steps.version.outputs.CARGO_PKG_VERSION }}
+      CARGO_PKG_PRERELEASE: ${{ steps.version.outputs.CARGO_PKG_PRERELEASE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Determine Cargo version
+        id: version
+        run: |
+          export CARGO_PKG_VERSION=$(awk -F '["=]' '/^\[(workspace.)?package\]/{p=1} p && /^version[[:space:]]*=/ {gsub(/"/, "", $3); print $3; p=0}' Cargo.toml)
+          export CARGO_PKG_PRERELEASE=$([[ $CARGO_PKG_VERSION =~ -[0-9A-Za-z]+ ]] && echo "true" || echo "false")
+          echo "CARGO_PKG_VERSION=${CARGO_PKG_VERSION}" >> $GITHUB_OUTPUT
+          echo "CARGO_PKG_PRERELEASE=${CARGO_PKG_PRERELEASE}" >> $GITHUB_OUTPUT
+      - name: Create Tag and Release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.CARGO_PKG_VERSION }}
+          release_name: v${{ steps.version.outputs.CARGO_PKG_VERSION }}
+          prerelease: ${{ steps.version.outputs.CARGO_PKG_PRERELEASE }}
+
+  build:
+    name: ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.platform.os }}
+    permissions: write-all
+    needs:
+      - create-release
+      - vars
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os_name: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: ${{ needs.vars.outputs.executable-name }}-amd64.dll
+        toolchain:
+          - stable
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v0
+        with:
+          command: "build"
+          target: ${{ matrix.platform.target }}
+          toolchain: ${{ matrix.toolchain }}
+          args: --release ${{ env.CARGO_EXTRA_ARGS }}
+          strip: true
+      - name: Rename binary (linux)
+        run: mv target/${{ matrix.platform.target }}/release/lib${{ env.ENGINE_NAME }}.so target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+        if: matrix.platform.os_name == 'Linux-x86_64'
+      - name: Rename binary (macos)
+        run: mv target/${{ matrix.platform.target }}/release/lib${{ env.ENGINE_NAME }}.dylib target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+        if: matrix.platform.os == 'macOS-latest'
+      - name: Rename binary (windows)
+        run: mv target/${{ matrix.platform.target }}/release/${{ env.ENGINE_NAME }}.dll target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+        if: matrix.platform.os_name == 'Windows-x86_64'
+      - name: Generate SHA-256
+        run: shasum -a 256 target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} | cut -d ' ' -f 1 > target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}.sha256
+      - name: Release binary and SHA-256 checksum to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-release.outputs.CARGO_PKG_VERSION }}
+          prerelease: ${{ needs.create-release.outputs.CARGO_PKG_PRERELEASE }}
+          files: |
+            target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+            target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}.sha256
