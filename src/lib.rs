@@ -29,8 +29,8 @@ engine! {
         /// nothing if we already hold a connection.
         #[instruction(
             id = "sap-connect",
-            name = "Connect",
-            lua_name = "Connect to Open Instance",
+            lua_name = "Connect",
+            name = "Connect to Open Instance",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn connect() {
@@ -42,8 +42,8 @@ engine! {
         /// Run a transaction.
         #[instruction(
             id = "sap-run-transaction",
-            name = "RunTransaction",
-            lua_name = "Run Transaction",
+            lua_name = "RunTransaction",
+            name = "Run Transaction",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn run_transaction(
@@ -56,8 +56,8 @@ engine! {
         /// Take a screenshot of a SAP window
         #[instruction(
             id = "sap-screenshot",
-            name = "ScreenshotAsEvidence",
-            lua_name = "Screenshot as Evidence",
+            lua_name = "ScreenshotAsEvidence",
+            name = "Screenshot as Evidence",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn screenshot(
@@ -90,8 +90,8 @@ engine! {
         /// Check if an element exists and returns a boolean.
         #[instruction(
             id = "sap-does-element-exist",
-            name = "DoesElementExist",
-            lua_name = "Does Element Exist",
+            lua_name = "DoesElementExist",
+            name = "Does Element Exist",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn does_element_exist(
@@ -104,8 +104,8 @@ engine! {
         /// Return the type string of the component.
         #[instruction(
             id = "sap-component-type",
-            name = "ComponentType",
-            lua_name = "Component Type",
+            lua_name = "ComponentType",
+            name = "Component Type",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn component_type(
@@ -175,8 +175,8 @@ engine! {
         /// Highlight an element by drawing a red box around it. Useful just before screenshotting.
         #[instruction(
             id = "sap-visualise-element",
-            name = "HighlightElement",
-            lua_name = "Highlight Element",
+            lua_name = "HighlightElement",
+            name = "Highlight Element",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn visualise_element(
@@ -246,8 +246,8 @@ engine! {
         /// Set the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.
         #[instruction(
             id = "sap-set-text-value",
-            name = "SetTextValue",
-            lua_name = "Text Value: Set",
+            lua_name = "SetTextValue",
+            name = "Text Value: Set",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn set_text_value(
@@ -270,8 +270,8 @@ engine! {
         /// Get the value of a fields 'Text' value. The behaviour of this differs depending on the type of field.
         #[instruction(
             id = "sap-get-text-value",
-            name = "GetTextValue",
-            lua_name = "Text Value: Get",
+            lua_name = "GetTextValue",
+            name = "Text Value: Get",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn get_text_value(
@@ -299,8 +299,8 @@ engine! {
         /// Send a keypress to the SAP system.
         #[instruction(
             id = "sap-send-key",
-            name = "SendKey",
-            lua_name = "Send Key",
+            lua_name = "SendKey",
+            name = "Send Key",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn send_key(
@@ -319,8 +319,8 @@ engine! {
         /// Press a button in the UI.
         #[instruction(
             id = "sap-press-button",
-            name = "PressButton",
-            lua_name = "Press UI Button",
+            lua_name = "PressButton",
+            name = "Press UI Button",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn press_button(
@@ -339,8 +339,8 @@ engine! {
         /// Set the state of a checkbox in the UI.
         #[instruction(
             id = "sap-set-checkbox",
-            name = "SetCheckbox",
-            lua_name = "Checkbox: Set Value",
+            lua_name = "SetCheckbox",
+            name = "Checkbox: Set Value",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn set_checkbox(
@@ -360,8 +360,8 @@ engine! {
         /// Set the key (selected item) of the combo box.
         #[instruction(
             id = "sap-set-combobox-key",
-            name = "SetComboBoxKey",
-            lua_name = "Combo Box: Set Key",
+            lua_name = "SetComboBoxKey",
+            name = "Combo Box: Set Key",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn set_combobox_key(
@@ -381,8 +381,8 @@ engine! {
         /// Get the number of rows in a grid.
         #[instruction(
             id = "sap-grid-get-row-count",
-            name = "GetGridRowCount",
-            lua_name = "Grid: Get Row Count",
+            lua_name = "GetGridRowCount",
+            name = "Grid: Get Row Count",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn grid_get_row_count(
@@ -406,8 +406,8 @@ engine! {
         /// Click or double click a cell.
         #[instruction(
             id = "sap-grid-click-cell",
-            name = "ClickGridCell",
-            lua_name = "Grid: Click or Double Click Cell",
+            lua_name = "ClickGridCell",
+            name = "Grid: Click or Double Click Cell",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn grid_click_cell(
@@ -439,8 +439,8 @@ engine! {
         /// Get the value of a grid cell.
         #[instruction(
             id = "sap-grid-get-cell-value",
-            name = "GetGridCellValue",
-            lua_name = "Grid: Get Cell Value",
+            lua_name = "GetGridCellValue",
+            name = "Grid: Get Cell Value",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn grid_get_cell_value(
@@ -466,8 +466,8 @@ engine! {
         /// Get the type of message displayed in the status bar shown at the bottom of the SAP window. This could be 'S' (Success), 'W' (Warning), 'E' (Error), 'A' (Abort), 'I' (Information) or '' (No Status).
         #[instruction(
             id = "sap-get-statusbar-state",
-            name = "GetStatusBarState",
-            lua_name = "Status Bar: Get State",
+            lua_name = "GetStatusBarState",
+            name = "Status Bar: Get State",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn get_statusbar_state(
@@ -490,8 +490,8 @@ engine! {
         /// Select a tab in a tab panel.
         #[instruction(
             id = "sap-tab-select",
-            name = "SelectTab",
-            lua_name = "Tab: Select",
+            lua_name = "SelectTab",
+            name = "Tab: Select",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn tab_select(
@@ -510,8 +510,8 @@ engine! {
         /// Get the number of rows in a table.
         #[instruction(
             id = "sap-table-get-row-count",
-            name = "GetTableRowCount",
-            lua_name = "Table: Get Row Count",
+            lua_name = "GetTableRowCount",
+            name = "Table: Get Row Count",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn table_get_row_count(
@@ -528,8 +528,8 @@ engine! {
         /// Select a row in a table.
         #[instruction(
             id = "sap-table-row-select",
-            name = "SelectTableRow",
-            lua_name = "Table: Row: Select",
+            lua_name = "SelectTableRow",
+            name = "Table: Row: Select",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn table_row_select(
@@ -548,8 +548,8 @@ engine! {
         /// Get the ID of a cell that can be fed into another function's 'Target' parameter.
         #[instruction(
             id = "sap-table-cell-get-id",
-            name = "GetIDOfTableCell",
-            lua_name = "Table: Get ID of Cell",
+            lua_name = "GetIDOfTableCell",
+            name = "Table: Get ID of Cell",
             flags = InstructionFlags::AUTOMATIC,
         )]
         fn table_cell_get_id(
