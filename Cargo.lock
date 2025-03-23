@@ -153,9 +153,9 @@ dependencies = [
 
 [[package]]
 name = "dynamic-plugin"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a662b86b442834643c954131d2140ad06607d408520c79533ccf4bb118589ce"
+checksum = "d79537f9edfda6c97f47d9066ce8f6a881e94f8a872c1aae216e028cc4012524"
 dependencies = [
  "dynamic-plugin-macros",
  "libc",
@@ -166,10 +166,11 @@ dependencies = [
 
 [[package]]
 name = "dynamic-plugin-macros"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94eb6ea9814fe3dd80fa2d48585c04475d28eb0a60561f723fe629f60c0405fa"
+checksum = "3e1fecedb583ec8ad27a1da169864bda3a5fec5bbb32127278ffa5c379681af2"
 dependencies = [
+ "proc-macro-error2",
  "proc-macro2",
  "quote",
  "syn",
@@ -280,7 +281,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -469,7 +470,7 @@ dependencies = [
 [[package]]
 name = "testangel-engine"
 version = "1.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#374f98976755587607cb877bedabb696da8ff59f"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "dynamic-plugin",
  "getset",
@@ -481,7 +482,7 @@ dependencies = [
 [[package]]
 name = "testangel-engine-macros"
 version = "1.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#374f98976755587607cb877bedabb696da8ff59f"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "heck 0.5.0",
  "proc-macro-error2",
@@ -493,7 +494,7 @@ dependencies = [
 [[package]]
 name = "testangel-ipc"
 version = "3.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#374f98976755587607cb877bedabb696da8ff59f"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "bitflags",
  "cbindgen",
@@ -504,7 +505,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.13.0-rc.1"
+version = "0.13.0-rc.2"
 dependencies = [
  "base64",
  "dynamic-plugin",
