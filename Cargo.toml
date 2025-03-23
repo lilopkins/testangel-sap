@@ -11,6 +11,6 @@ crate-type = [ "cdylib" ]
 
 [dependencies]
 base64 = "0.22.0"
-dynamic-plugin = { version = "0.5.0", features = ["client"] }
+dynamic-plugin = { version = "0.6.0", features = ["client"] }
 sap-scripting = "0.3"
 testangel-engine = { version = "1.0.0", git = "https://github.com/lilopkins/testangel.git", branch = "next" }
