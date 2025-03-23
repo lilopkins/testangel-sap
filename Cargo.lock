@@ -470,7 +470,7 @@ dependencies = [
 [[package]]
 name = "testangel-engine"
 version = "1.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#22ff5b1fccab37a7e6bd3090565c410658b8a413"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "dynamic-plugin",
  "getset",
@@ -482,7 +482,7 @@ dependencies = [
 [[package]]
 name = "testangel-engine-macros"
 version = "1.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#22ff5b1fccab37a7e6bd3090565c410658b8a413"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "heck 0.5.0",
  "proc-macro-error2",
@@ -494,7 +494,7 @@ dependencies = [
 [[package]]
 name = "testangel-ipc"
 version = "3.0.0"
-source = "git+https://github.com/lilopkins/testangel.git?branch=next#22ff5b1fccab37a7e6bd3090565c410658b8a413"
+source = "git+https://github.com/lilopkins/testangel.git?branch=next#721bd1faf837070fe43858e0a7f640c696716157"
 dependencies = [
  "bitflags",
  "cbindgen",
