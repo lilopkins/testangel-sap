@@ -505,7 +505,7 @@ dependencies = [
 
 [[package]]
 name = "testangel-sap"
-version = "0.13.0-rc.3"
+version = "0.13.0"
 dependencies = [
  "base64",
  "dynamic-plugin",
