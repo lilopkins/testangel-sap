@@ -13,7 +13,9 @@ use testangel_engine::{engine, Evidence, EvidenceContent};
 engine! {
     /// Work with SAP
     #[engine(
+        name = "SAP",
         version = env!("CARGO_PKG_VERSION"),
+        lua_name = "SAP",
     )]
     #[derive(Default)]
     #[allow(clippy::upper_case_acronyms)]
