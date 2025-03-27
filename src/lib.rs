@@ -3,10 +3,7 @@
 use std::fs;
 
 use sap_scripting::{
-    GuiButton_Impl, GuiCheckBox_Impl, GuiComboBox_Impl, GuiComponentCollection_Impl,
-    GuiComponent_Impl, GuiContainer_Impl, GuiFrameWindow_Impl, GuiGridView_Impl, GuiSession,
-    GuiSession_Impl, GuiStatusbar_Impl, GuiTab_Impl, GuiTableControl_Impl, GuiTableRow_Impl,
-    GuiVComponent_Impl, SAPComInstance, SAPComponent,
+    GuiButton_Impl, GuiCheckBox_Impl, GuiComboBox_Impl, GuiComponentCollection_Impl, GuiComponent_Impl, GuiContainer_Impl, GuiFrameWindow_Impl, GuiGridView_Impl, GuiSession, GuiSession_Impl, GuiShell_Impl, GuiStatusbar_Impl, GuiTab_Impl, GuiTableControl_Impl, GuiTableRow_Impl, GuiVComponent_Impl, SAPComInstance, SAPComponent
 };
 use testangel_engine::{engine, Evidence, EvidenceContent};
 
@@ -435,6 +432,94 @@ engine! {
                     Ok(())
                 }
                 _ => Err(String::from("The grid was invalid.")),
+            }?;
+        }
+
+        /// This function adds the specified column to the collection of the selected columns.
+        #[instruction(
+            id = "sap-grid-select-column",
+            lua_name = "SelectGridColumn",
+            name = "Grid: Select Column",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn select_grid_column(
+            #[arg(name = "Target Grid")] target: String,
+            column: String,
+        ) {
+            let session = get_session(state)?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
+            match comp {
+                SAPComponent::GuiGridView(g) => {
+                    g.select_column(column).map_err(|e| format!("The column couldn't be selected: {e}"))?;
+                    Ok(())
+                }
+                _ => Err(String::from("The grid was invalid.")),
+            }?;
+        }
+
+        /// This function removes the specified column from the collection of the selected columns.
+        #[instruction(
+            id = "sap-grid-deselect-column",
+            lua_name = "DeselectGridColumn",
+            name = "Grid: Deselect Column",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn select_grid_column(
+            #[arg(name = "Target Grid")] target: String,
+            column: String,
+        ) {
+            let session = get_session(state)?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
+            match comp {
+                SAPComponent::GuiGridView(g) => {
+                    g.deselect_column(column).map_err(|e| format!("The column couldn't be deselected: {e}"))?;
+                    Ok(())
+                }
+                _ => Err(String::from("The grid was invalid.")),
+            }?;
+        }
+
+        /// Calling contextMenu emulates the context menu request.
+        #[instruction(
+            id = "sap-grid-context-menu",
+            lua_name = "GridContextMenu",
+            name = "Grid: Context Menu",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn select_grid_column(
+            #[arg(name = "Target Grid")] target: String,
+        ) {
+            let session = get_session(state)?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
+            match comp {
+                SAPComponent::GuiGridView(g) => {
+                    g.context_menu().map_err(|e| format!("Couldn't open context menu: {e}"))?;
+                    Ok(())
+                }
+                _ => Err(String::from("The grid was invalid.")),
+            }?;
+        }
+
+        /// Select an item from the control’s context menu.
+        #[instruction(
+            id = "sap-shell-select-context-menu-item",
+            lua_name = "SelectShellContextMenuItem",
+            name = "Shell: Select Context Menu Item",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn select_grid_column(
+            #[arg(name = "Target")] target: String,
+            function_code: String,
+        ) {
+            let session = get_session(state)?;
+            let comp = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?;
+            match comp {
+                SAPComponent::GuiGridView(g) => {
+                    g.select_context_menu_item(function_code).map_err(|e| format!("Couldn't Select context menu item: {e}"))?;
+                    Ok(())
+                }
+                // TODO Implement for all other implementors
+                _ => Err(String::from("The shell was invalid.")),
             }?;
         }
 
