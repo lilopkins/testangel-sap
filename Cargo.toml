@@ -1,7 +1,7 @@
 [package]
 name = "testangel-sap"
-version = "0.14.0-rc.1"
-edition = "2021"
+version = "0.14.0-rc.2"
+edition = "2024"
 authors = [ "Lily Hopkins <lily@hpkns.uk>" ]
 description = "TestAngel engine for interaction with SAP systems."
 
@@ -12,5 +12,5 @@ crate-type = [ "cdylib" ]
 [dependencies]
 base64 = "0.22.0"
 dynamic-plugin = { version = "0.6.0", features = ["client"] }
-sap-scripting = "0.3"
+sap-scripting = "0.4.1"
 testangel-engine = { version = "1.0.0", git = "https://github.com/lilopkins/testangel.git", branch = "next" }
