@@ -337,6 +337,23 @@ engine! {
             grid.get_cell_value(row, col)?
         }
 
+        /// This function emulates clicking a button in the grid view’s toolbar.
+        #[instruction(
+            id = "sap-grid-press-toolbar-button",
+            lua_name = "PressGridToolbarButton",
+            name = "Grid: Press Toolbar Button",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn select_grid_column(
+            #[arg(name = "Target Grid")] target: String,
+            id: String,
+        ) {
+            let session = get_session(state)?;
+            let grid: GuiGridView = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?
+                .downcast().ok_or("The grid was invalid")?;
+            grid.press_toolbar_button(id)?;
+        }
+
         /// Select an item from the control’s context menu.
         #[instruction(
             id = "sap-shell-select-context-menu-item",
