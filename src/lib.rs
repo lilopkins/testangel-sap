@@ -354,6 +354,72 @@ engine! {
             grid.press_toolbar_button(id)?;
         }
 
+        /// This function sets the first visible row of a grid view.
+        #[instruction(
+            id = "sap-grid-set-first-visible-row",
+            lua_name = "SetGridFirstVisibleRow",
+            name = "Grid: Set First Visible Row",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn set_grid_first_visible_row(
+            #[arg(name = "Target Grid")] target: String,
+            first_visible_row: i32,
+        ) {
+            let session = get_session(state)?;
+            let grid: GuiGridView = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?
+                .downcast().ok_or("The grid was invalid")?;
+            grid.set_first_visible_row(first_visible_row)?;
+        }
+
+        /// This function gets the first visible row of a grid view.
+        #[instruction(
+            id = "sap-grid-get-first-visible-row",
+            lua_name = "GetGridFirstVisibleRow",
+            name = "Grid: Get First Visible Row",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn get_grid_first_visible_row(
+            #[arg(name = "Target Grid")] target: String,
+        ) -> #[output(id = "value", name = "First Visible Row")] i32 {
+            let session = get_session(state)?;
+            let grid: GuiGridView = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?
+                .downcast().ok_or("The grid was invalid")?;
+            grid.first_visible_row()?
+        }
+
+        /// This function sets the first visible column of a grid view.
+        #[instruction(
+            id = "sap-grid-set-first-visible-column",
+            lua_name = "SetGridFirstVisibleColumn",
+            name = "Grid: Set First Visible Column",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn set_grid_first_visible_column(
+            #[arg(name = "Target Grid")] target: String,
+            first_visible_column: String,
+        ) {
+            let session = get_session(state)?;
+            let grid: GuiGridView = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?
+                .downcast().ok_or("The grid was invalid")?;
+            grid.set_first_visible_column(first_visible_column)?;
+        }
+
+        /// This function gets the first visible column of a grid view.
+        #[instruction(
+            id = "sap-grid-get-first-visible-column",
+            lua_name = "GetGridFirstVisibleColumn",
+            name = "Grid: Get First Visible Column",
+            flags = InstructionFlags::AUTOMATIC,
+        )]
+        fn get_grid_first_visible_column(
+            #[arg(name = "Target Grid")] target: String,
+        ) -> #[output(id = "value", name = "First Visible Column")] String {
+            let session = get_session(state)?;
+            let grid: GuiGridView = session.find_by_id(target).map_err(|_| String::from("Failed to find grid"))?
+                .downcast().ok_or("The grid was invalid")?;
+            grid.first_visible_column()?
+        }
+
         /// Select an item from the control’s context menu.
         #[instruction(
             id = "sap-shell-select-context-menu-item",
